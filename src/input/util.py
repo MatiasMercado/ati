@@ -1,9 +1,10 @@
 import cv2
+import numpy as np
+
+from src.input.distance_util import DistanceUtil
 
 
 class Util:
-    PATH = '../../resources/lena.ascii.pbm';
-
     @staticmethod
     def load_gray_scale(path):
         return cv2.imread(path)[:, :, 1]
@@ -24,6 +25,8 @@ class Util:
     def save(image, name):
         cv2.imwrite(name + ".pbm", image, (cv2.IMWRITE_PXM_BINARY, 0))
 
+
+
 PATH = '../../resources/lena.ascii.pbm'
 img = Util.load_gray_scale(PATH)
 print(img.shape)
@@ -31,4 +34,18 @@ img = Util.trim(img, (30, 40), (60, 85))
 print(img.shape)
 info = Util.get_info(img, (3, 3), (7, 7))
 print(info)
-Util.save(img, "aver")
+circle = np.zeros((200, 200), dtype=np.short)
+square = np.zeros((200, 200), dtype=np.short)
+center = (100, 100)
+for x in range(200):
+    for y in range(200):
+        if DistanceUtil.euclidean_distance_lower_than(center, (x, y), 40):
+            circle[x, y] = 255
+
+for x in range(200):
+    for y in range(200):
+        if DistanceUtil.chebyshev_distance_lower_than(center, (x, y), 40):
+            square[x, y] = 255
+
+Util.save(circle, "circle")
+Util.save(square, "square")
