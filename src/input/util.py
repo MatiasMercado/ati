@@ -25,8 +25,6 @@ class Util:
     def save(image, name):
         cv2.imwrite(name + ".pbm", image, (cv2.IMWRITE_PXM_BINARY, 0))
 
-
-
 PATH = '../../resources/lena.ascii.pbm'
 img = Util.load_gray_scale(PATH)
 print(img.shape)
