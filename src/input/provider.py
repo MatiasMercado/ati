@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.input.distance_util import DistanceUtil
 from src.input.util import Util
 
 
@@ -59,5 +60,22 @@ class Provider:
 
         return [(Rp + m) * 255, (Gp + m) * 255, (Bp + m) * 255]
 
-aux = Provider.color_gradient((255, 255))
-Util.save(aux, "color_gradient")
+    @staticmethod
+    def draw_circle(size, radius):
+        (width, height) = size
+        circle = np.zeros(size, dtype=np.short)
+        center = (width / 2, height / 2)
+        for x in range(width):
+            for y in range(height):
+                if DistanceUtil.euclidean_distance_lower_than(center, (x, y), radius):
+                    circle[x, y] = 255
+
+    @staticmethod
+    def draw_square(size, side):
+        (width, height) = size
+        square = np.zeros(size, dtype=np.short)
+        center = (width / 2, height / 2)
+        for x in range(width):
+            for y in range(height):
+                if DistanceUtil.chebyshev_distance_lower_than(center, (x, y), side):
+                    square[x, y] = 255

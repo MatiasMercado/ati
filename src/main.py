@@ -8,12 +8,10 @@ from kivy.graphics.vertex_instructions import Line, Ellipse, Rectangle
 from kivy.uix.floatlayout import FloatLayout
 from kivy.properties import ObjectProperty, StringProperty, NumericProperty
 from kivy.uix.popup import Popup
-from numpy.random import random
-from input.reader import Util
+from src.input.util import Util
 
 
 class Picture(FloatLayout):
-
     texture = ObjectProperty(None)
     textureSize = ObjectProperty(None)
     pos = ObjectProperty(None)
@@ -27,7 +25,7 @@ class Picture(FloatLayout):
         cols = self.img.shape[1]
         if touch.x >= 0 and touch.x < rows and touch.y >= 0 and \
                         touch.y < cols:
-        #if self.collide_point(*touch.pos):
+            # if self.collide_point(*touch.pos):
             self.X = math.floor(touch.x)
             self.Y = cols - math.floor(touch.y) - 1
             # Take element (y, x) from matrix
@@ -48,7 +46,8 @@ class Picture(FloatLayout):
             self.canvas.remove_group('Awesome')
             with self.canvas:
                 Color(1, 1, 1, 0.3)
-                Rectangle(source='../resources/highlight.jpg', pos=(pos[0], pos[1]), size=(base, height), group='Awesome')
+                Rectangle(source='../resources/highlight.jpg', pos=(pos[0], pos[1]), size=(base, height),
+                          group='Awesome')
 
     def calculate_rectangle_pos(self, touch, originX, originY, endX, endY):
         height = math.fabs(endY - originY)
@@ -110,6 +109,7 @@ class Root(FloatLayout):
 
 class ImageLoader(App):
     pass
+
 
 if __name__ == '__main__':
     ImageLoader().run()
