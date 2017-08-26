@@ -8,12 +8,16 @@ class Util:
     # returns [image, isColor(boolean)]
     @staticmethod
     def load_image(path):
-        img = cv2.imread(path)
-        (width, height) = img.shape
+        image = cv2.imread(path)
+        (width, height) = (image.shape[0], image.shape[1])
+
+        # Change bgr to rgb color format
+        img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
         is_color = False
         for x in range(width):
             for y in range(height):
-                is_color = img[x, y, 0] != img[x, y, 1] or img[x, y, 0] != img[x, y, 2]
+                is_color = img[x, y, 0] is not img[x, y, 1] or img[x, y, 0] is not img[x, y, 2]
             if is_color:
                 break
         if is_color:
@@ -49,7 +53,8 @@ class Util:
 
     @staticmethod
     def save(image, name):
-        cv2.imwrite(name + ".pbm", image, (cv2.IMWRITE_PXM_BINARY, 0))
+        img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
 
     @staticmethod
     def to_binary(image, threshold):
@@ -111,8 +116,13 @@ class Util:
 
     @staticmethod
     def negative(image):
-        vfunc = np.vectorize(lambda p: 255 - p)
-        return vfunc(image)
+        # vfunc = np.vectorize(lambda p: 255 - p)
+        # return vfunc(image)
+        negative = np.copy(image)
+        for i in range(512):
+            for j in range(512):
+                negative[i][j] = 255 - negative[i][j]
+        return negative
 
         # @staticmethod
         # def gaussian_distr(x1, x2):
