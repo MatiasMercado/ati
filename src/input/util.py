@@ -5,7 +5,7 @@ from src.input.distance_util import DistanceUtil
 
 
 class Util:
-    # returns [iamge, isColor(boolean)]
+    # returns [image, isColor(boolean)]
     @staticmethod
     def load_image(path):
         img = cv2.imread(path)
@@ -114,8 +114,8 @@ class Util:
         vfunc = np.vectorize(lambda p: 255 - p)
         return vfunc(image)
 
-    # @staticmethod
-    # def gaussian_distr(x1, x2):
+        # @staticmethod
+        # def gaussian_distr(x1, x2):
         # y1 = np.sqrt(-2 * log(x1)) * cos(2 * np.PI * x2)
         # y2 = np.sqrt(-2 * log(x1)) * sin(2 * np.PI * x2)
         # return y1, y2
@@ -124,3 +124,37 @@ class Util:
     def box_muller(y1, y2):
         x2 = np.arctan(y2 / y1) / (2 * np.PI)
         # x1 = exp(-(y1 ** 2 + y2 ** 2) / 2)
+
+    @staticmethod
+    def sliding_window(image, mask, border_policy=0):
+        ans = np.zeros(image.shape)
+        (image_width, image_height) = image.shape
+        for x in range(image_width):
+            for y in range(image_height):
+                ans[x, y] = Util.apply_mask(image, (x, y), mask)
+        return ans
+
+    @staticmethod
+    def apply_mask(image, center, mask, border_policy=0):
+        (image_width, image_height) = image.shape
+        (center_x, center_y) = center
+        (mask_width, mask_height) = mask.shape
+        acu = 0
+        for x in mask_width:
+            image_x = center_x - int(mask_width / 2) + x
+            if image_x >= image_width:
+                image_x -= mask_width
+            elif image_x < 0:
+                image_x += mask_width
+            for y in mask_height:
+                image_y = center_y - int(mask_height / 2) + y
+                if image_y >= image_height:
+                    image_y -= mask_height
+                elif image_y < 0:
+                    image_y += mask_height
+                acu += mask(x, y) * image(image_x, image_y)
+        return acu
+
+
+my_image = Util.load_image("circle.pbm")
+print(Util.gray_hist(my_image[0]))

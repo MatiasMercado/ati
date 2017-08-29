@@ -19,8 +19,6 @@ class Provider:
         (width, height) = size
         img = np.zeros((width, height, 3), dtype=np.short)
 
-        pixel = (0, 0, 0)
-
         for x in range(width):
             for y in range(height):
                 img[x, y] = Provider.hsv_to_rgb(x * 360 / (width - 1), 1, y / (height - 1))
