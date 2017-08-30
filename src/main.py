@@ -207,10 +207,10 @@ class Root(FloatLayout):
             return None
 
 
-class MyApp(App):
+class ImageEditorApp(App):
     def build(self):
         return Root()
 
 
 if __name__ == '__main__':
-    MyApp().run()
+    ImageEditorApp().run()

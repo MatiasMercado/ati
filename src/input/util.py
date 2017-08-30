@@ -165,6 +165,5 @@ class Util:
                 acu += mask(x, y) * image(image_x, image_y)
         return acu
 
-
-my_image = Util.load_image("circle.pbm")
-print(Util.gray_hist(my_image[0]))
+# (my_image, is_color) = Util.load_image('../../resources/lena.ascii.pbm')
+# print(Util.gray_hist(my_image[0]))
