@@ -102,16 +102,18 @@ class Root(FloatLayout):
 
         self.picture = Picture(pos=position, size=img_size, img=img, is_color=is_color,
                                x_input=self.x_input, y_input=self.y_input, value_input=self.value_input)
+        self.canvas.remove_group('main_image')
         with self.picture.canvas:
-            Rectangle(texture=texture, pos=position, size=img_size)
+            Rectangle(texture=texture, pos=position, size=img_size, group='main_image')
         self.add_widget(self.picture)
 
     def draw_transformed_image(self, img, position):
         img_size = (img.shape[0], img.shape[1])
         texture = self.create_texture(img, self.is_color, img_size)
         self.transformed_picture = BoxLayout(pos=position, size=img_size)
+        self.canvas.remove_group('transform')
         with self.transformed_picture.canvas:
-            Rectangle(texture=texture, pos=position, size=img_size)
+            Rectangle(texture=texture, pos=position, size=img_size, group='transform')
         self.add_widget(self.transformed_picture)
 
     def create_texture(self, img, is_color, img_size):
