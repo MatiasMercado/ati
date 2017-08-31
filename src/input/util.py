@@ -161,46 +161,8 @@ class Util:
         x2 = np.arctan(y2 / y1) / (2 * np.PI)
         # x1 = exp(-(y1 ** 2 + y2 ** 2) / 2)
 
-    @staticmethod
-    def sliding_window(image, mask, border_policy=0):
-        ans = np.zeros(image.shape)
-        (image_width, image_height) = image.shape[0], image.shape[1]
-        for x in range(image_width):
-            for y in range(image_height):
-                for z in range(image.shape[2]):
-                    ans[x, y, z] = Util.apply_mask(image[:, :, z], (x, y), mask)
-        return ans
 
-    @staticmethod
-    def sliding_window_median(image, mask, weighted=False, border_policy=0):
-        ans = np.zeros(image.shape)
-        (image_width, image_height) = image.shape[0], image.shape[1]
-        for x in range(image_width):
-            for y in range(image_height):
-                for z in range(image.shape[2]):
-                    ans[x, y, z] = Util.apply_mask_median(image[:, :, z], (x, y), mask, weighted=weighted)
-        return ans
 
-    @staticmethod
-    def apply_mask(image, center, mask, border_policy=0):
-        (image_width, image_height) = image.shape
-        (center_x, center_y) = center
-        (mask_width, mask_height) = mask.shape
-        acu = 0
-        for x in range(mask_width):
-            image_x = center_x - int(mask_width / 2) + x
-            if image_x >= image_width:
-                image_x -= mask_width
-            elif image_x < 0:
-                image_x += mask_width
-            for y in range(mask_height):
-                image_y = center_y - int(mask_height / 2) + y
-                if image_y >= image_height:
-                    image_y -= mask_height
-                elif image_y < 0:
-                    image_y += mask_height
-                acu += mask[x][y] * image[image_x][image_y]
-        return acu
 
     # (my_image, is_color) = Util.load_image('../../resources/lena.ascii.pbm')
     # print(Util.gray_hist(my_image[0]))
@@ -290,31 +252,8 @@ class Util:
 
     @staticmethod
     def add_noise_rayleigh(image, scale=1):
-        Util.multiply(image, np.random.rayleigh(scale=scale, size=image.shape))
+        return Util.multiply(image, np.random.rayleigh(scale=scale, size=image.shape))
 
-    @staticmethod
-    def apply_mask_median(image, center, mask, weighted=False, border_policy=0):
-        (image_width, image_height) = image.shape
-        (center_x, center_y) = center
-        (mask_width, mask_height) = mask.shape
-        vec = []
-        for x in range(mask_width):
-            image_x = center_x - int(mask_width / 2) + x
-            if image_x >= image_width:
-                image_x -= mask_width
-            elif image_x < 0:
-                image_x += mask_width
-            for y in range(mask_height):
-                image_y = center_y - int(mask_height / 2) + y
-                if image_y >= image_height:
-                    image_y -= mask_height
-                elif image_y < 0:
-                    image_y += mask_height
-                if weighted:
-                    for i in range(mask[x][y]):
-                        vec.append(image[image_x][image_y])
-                else:
-                    vec.append(image[image_x][image_y])
-        return np.median(vec)
+
 
 # img = Util.load_raw('LENA.RAW')
