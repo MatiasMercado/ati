@@ -8,8 +8,7 @@ class FilterProvider:
     def blur(image, size):
         mask = np.zeros(size)
         mask = Util.apply_to_matrix(mask, lambda val: 1 / mask.flatten().size, two_dim=True)
-        print(mask)
-        return FilterProvider.sliding_window(image, mask)
+        return FilterProvider.__sliding_window(image, mask)
 
     @staticmethod
     def gauss_blur(image, size, sigma):
@@ -17,12 +16,9 @@ class FilterProvider:
         mask = Util.apply_to_matrix_with_position(mask, lambda val, x, y: np.exp(-(x ** 2 + y ** 2) / (sigma ** 2)) / (
             2 * np.pi * sigma ** 2), two_dim=True)
         mask_sum = mask.sum()
-        print('gasuss sum:', mask_sum)
         mask = Util.apply_to_matrix(mask, lambda val: val / mask_sum, two_dim=True)
         mask_sum = mask.sum()
-        print('gasuss sum:', mask_sum)
-        print(mask)
-        return FilterProvider.sliding_window(image, mask)
+        return FilterProvider.__sliding_window(image, mask)
 
     @staticmethod
     def pasa_altos(image):
@@ -33,21 +29,20 @@ class FilterProvider:
                     mask[x][y] = 8/9
                 else:
                     mask[x][y] = -1/9
-        print(mask)
-        return FilterProvider.sliding_window(image, mask)
+        return FilterProvider.__sliding_window(image, mask)
 
     @staticmethod
-    def sliding_window_median(image, mask, weighted=False, border_policy=0):
+    def median_filter(image, mask, weighted=False, border_policy=0):
         ans = np.zeros(image.shape)
         (image_width, image_height) = image.shape[0], image.shape[1]
         for x in range(image_width):
             for y in range(image_height):
                 for z in range(image.shape[2]):
-                    ans[x, y, z] = FilterProvider.apply_mask_median(image[:, :, z], (x, y), mask, weighted=weighted)
+                    ans[x, y, z] = FilterProvider.__apply_mask_median(image[:, :, z], (x, y), mask, weighted=weighted)
         return ans
 
     @staticmethod
-    def apply_mask(image, center, mask, border_policy=0):
+    def __apply_mask(image, center, mask, border_policy=0):
         (image_width, image_height) = image.shape
         (center_x, center_y) = center
         (mask_width, mask_height) = mask.shape
@@ -68,7 +63,7 @@ class FilterProvider:
         return acu
 
     @staticmethod
-    def apply_mask_median(image, center, mask, weighted=False, border_policy=0):
+    def __apply_mask_median(image, center, mask, weighted=False, border_policy=0):
         (image_width, image_height) = image.shape
         (center_x, center_y) = center
         (mask_width, mask_height) = mask.shape
@@ -93,12 +88,12 @@ class FilterProvider:
         return np.median(vec)
 
     @staticmethod
-    def sliding_window(image, mask, border_policy=0):
+    def __sliding_window(image, mask, border_policy=0):
         ans = np.zeros(image.shape)
         (image_width, image_height) = image.shape[0], image.shape[1]
         for x in range(image_width):
             for y in range(image_height):
                 for z in range(image.shape[2]):
-                    ans[x, y, z] = FilterProvider.apply_mask(image[:, :, z], (x, y), mask)
+                    ans[x, y, z] = FilterProvider.__apply_mask(image[:, :, z], (x, y), mask)
         return ans
 

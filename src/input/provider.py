@@ -1,7 +1,6 @@
 import numpy as np
 
 from src.input.distance_util import DistanceUtil
-from src.input.filter_provider import FilterProvider
 import matplotlib.pyplot as plt
 from src.input.util import Util
 
@@ -23,7 +22,7 @@ class Provider:
 
         for x in range(width):
             for y in range(height):
-                img[x, y] = Provider.hsv_to_rgb(x * 360 / (width - 1), 1, y / (height - 1))
+                img[x, y] = Provider.__hsv_to_rgb(x * 360 / (width - 1), 1, y / (height - 1))
 
         # pixel = [0, 0, 0]
         # for c in range(3):
@@ -35,7 +34,7 @@ class Provider:
         return img
 
     @staticmethod
-    def get_rgb_p(C, X, H):
+    def __get_rgb_p(C, X, H):
         print(C, X, H)
         h = int(H / 60)
         if h == 0:
@@ -51,12 +50,12 @@ class Provider:
         return C, 0, X
 
     @staticmethod
-    def hsv_to_rgb(H, S, V):
+    def __hsv_to_rgb(H, S, V):
         C = V * S
         X = C * (1 - abs(((H / 60) % 2) - 1))
         m = V - C
 
-        (Rp, Gp, Bp) = Provider.get_rgb_p(C, X, H)
+        (Rp, Gp, Bp) = Provider.__get_rgb_p(C, X, H)
 
         return [(Rp + m) * 255, (Gp + m) * 255, (Bp + m) * 255]
 
@@ -114,6 +113,10 @@ class Provider:
 
 
 myimg = Util.load_raw('LENA.RAW', (256, 256))
+myimg = Util.load_raw('../../resources/GIRL.raw', (389, 164))
+myimg = Util.load_raw('../../resources/BARCO.raw', (290, 207))
+myimg = Util.load_raw('../../resources/GIRL2.raw', (256, 256))
+myimg = Util.load_raw('../../resources/LENAX.raw', (256, 256))
 # Util.save(myimg, 'original')
 # myimg = Util.add_additive_noise_exponential(myimg, scale=100, prob=0.9)
 # myimg = FilterProvider.gauss_blur(myimg, (7, 7), 0.1).astype('B')

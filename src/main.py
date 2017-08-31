@@ -89,8 +89,8 @@ class Root(FloatLayout):
     def load(self, *args):
         # self.source = '../resources/lena.ascii.pbm'
         # self.source = '../resources/color.pbm'
-        self.source = '../resources/blur.raw'
-        (self.img, self.is_color) = Util.load_raw(self.source, (256, 256)), True
+        self.source = '../resources/GIRL.raw'
+        (self.img, self.is_color) = Util.load_raw(self.source, (164, 389)), True
         # (self.img, self.is_color) = Util.load_image(self.source)
         self.draw_main_picture(self.img, self.is_color, self.img_pos)
 
