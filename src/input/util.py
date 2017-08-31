@@ -121,8 +121,6 @@ class Util:
 
     @staticmethod
     def negative(image):
-        # vfunc = np.vectorize(lambda p: 255 - p)
-        # return vfunc(image)
         negative = np.copy(image)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
@@ -210,11 +208,11 @@ class Util:
         Util.sum(image, np.random.normal(mu, sigma, image.shape))
 
 
-vec = np.random.exponential(2, 1000)
-vec = np.random.normal(0, 3, 1000)
-hist = np.histogram(vec, bins='auto')
-plt.hist(vec, bins='auto')
-# plt.show()
-print(hist)
-vec = np.random.binomial(1, 0.5, (5, 5))
-print(vec)
+# vec = np.random.exponential(2, 1000)
+# vec = np.random.normal(0, 3, 1000)
+# hist = np.histogram(vec, bins='auto')
+# plt.hist(vec, bins='auto')
+# # plt.show()
+# print(hist)
+# vec = np.random.binomial(1, 0.5, (5, 5))
+# print(vec)

@@ -90,9 +90,9 @@ class Root(FloatLayout):
         self.add_widget(self.coordinates)
 
     def load(self, *args):
-        # self.source = '../resources/lena.ascii.pbm'
-        # self.source = '../resources/color.pbm'
-        self.source = '../resources/drow.png'
+        #self.source = '../resources/lena.ascii.pbm'
+        self.source = '../resources/color.pbm'
+        # self.source = '../resources/drow.png'
         (self.img, self.is_color) = Util.load_image(self.source)
         self.draw_main_picture(self.img, self.is_color, self.img_pos)
 
