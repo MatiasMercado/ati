@@ -6,6 +6,13 @@ import matplotlib.pyplot as plt
 
 
 class Util:
+    @staticmethod
+    def load_raw(path):
+        image = np.fromfile(path, dtype='B')
+        print(image.shape)
+        print(256 * 256)
+        return image.reshape(256, 256)
+
     # returns [image, isColor(boolean)]
     @staticmethod
     def load_image(path):
@@ -22,8 +29,8 @@ class Util:
             if is_color:
                 break
         if is_color:
-            return img, True
-        return img[:, :, 1], False
+            return img.astype('float'), True
+        return img.astype('float'), False
 
     # deprecated
     @staticmethod
@@ -54,6 +61,11 @@ class Util:
 
     @staticmethod
     def save(image, name):
+        print(np.min(image), np.max(image))
+        image = Util.linear_transform(image)
+        print(np.min(image), np.max(image))
+        image = image.astype('short')
+        print(np.min(image), np.max(image))
         img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
 
@@ -92,24 +104,29 @@ class Util:
 
     @staticmethod
     def sum(img1, img2):
-        return np.sum(img1, img2)
+        return Util.element_wise_operation(img1, img2, lambda x, y: x + y)
+        # return np.sum(img1, img2)
 
     @staticmethod
     def multiply(img1, img2):
-        return np.multiply(img1, img2)
+        return Util.element_wise_operation(img1, img2, lambda x, y: x * y)
+        # return np.multiply(img1, img2)
 
     @staticmethod
     def linear_transform(image, final_range=(0, 255)):
         (final_min, final_max) = final_range
         final_difference = final_max - final_min
         size = image.shape
-        (width, height) = size
+        width, height = size[0], size[1]
         ans = np.zeros(size)
-        min_val = min(image)
-        max_val = max(image)
+        min_val = np.min(image)
+        max_val = np.max(image)
         for x in range(width):
             for y in range(height):
-                ans[x, y] = (image[x, y] - min_val) * final_difference / (max_val - min_val) + final_min
+                for z in range(3):
+                    ans[x][y][z] = (image[x][y][z] - min_val) * final_difference / (max_val - min_val) + final_min
+                    if (ans[x][y][z] >= 255):
+                        print(image[x][y][z], ans[x][y][z])
         return ans
 
     @staticmethod
@@ -130,8 +147,8 @@ class Util:
                     negative[i][j][k] = 255 - negative[i][j][k]
         return negative
 
-    # @staticmethod
-    # def gaussian_distr(x1, x2):
+        # @staticmethod
+        # def gaussian_distr(x1, x2):
         # y1 = np.sqrt(-2 * log(x1)) * cos(2 * np.PI * x2)
         # y2 = np.sqrt(-2 * log(x1)) * sin(2 * np.PI * x2)
         # return y1, y2
@@ -179,10 +196,11 @@ class Util:
 
     @staticmethod
     def add_additive_noise_exponential(image, scale=1, prob=0.5):
-        return Util.sum(image, Util.multiply(
+        aux = Util.multiply(
             np.random.exponential(scale, image.shape),
             Util.binary_matrix(image.shape, prob)
-        ))
+        )
+        return Util.sum(image, aux)
 
     @staticmethod
     def add_additive_noise_normal(image, mu=0, sigma=1, prob=0.5):
@@ -202,19 +220,46 @@ class Util:
 
     @staticmethod
     def add_comino_and_sugar_noise(image, prob=0.5):
-        vfunc = np.vectorize(lambda p: Util.single_comino_and_sugar(p, prob))
-        return vfunc(image)
+        ret = Util.apply_to_matrix(image, lambda p: Util.single_comino_and_sugar(p, prob))
+        return ret
+
+    @staticmethod
+    def apply_to_matrix(matrix, func, independent_layer=False, two_dim = False):
+        negative = np.copy(matrix)
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                if two_dim:
+                    negative[i][j] = func(negative[i][j])
+                elif independent_layer:
+                    for k in range(matrix.shape[2]):
+                        negative[i][j][k] = func(negative[i][j][k])
+                else:
+                    aux = func(negative[i][j][0])
+                    for k in range(matrix.shape[2]):
+                        negative[i][j][k] = aux
+        return negative
+
+    @staticmethod
+    def element_wise_operation(matrix1, matrix2, func, independent_layer=False):
+        negative = np.copy(matrix1)
+        print('start')
+        for i in range(matrix1.shape[0]):
+            for j in range(matrix1.shape[1]):
+                if independent_layer:
+                    for k in range(matrix1.shape[2]):
+                        negative[i][j][k] = func(matrix1[i][j][k], matrix2[i][j][k])
+                else:
+                    aux = func(matrix1[i][j][0], matrix2[i][j][0])
+                    for k in range(matrix1.shape[2]):
+                        negative[i][j][k] = aux
+        print('max', np.max(negative))
+        return negative
 
     @staticmethod
     def add_additive_noise_normal(image, mu=0, sigma=1):
-        Util.sum(image, np.random.normal(mu, sigma, image.shape))
+        Util.sum(image, np.random.rayleigh(mu, sigma, image.shape))
 
 
-vec = np.random.exponential(2, 1000)
-vec = np.random.normal(0, 3, 1000)
-hist = np.histogram(vec, bins='auto')
-plt.hist(vec, bins='auto')
-# plt.show()
-print(hist)
-vec = np.random.binomial(1, 0.5, (5, 5))
-print(vec)
+img = Util.load_raw('LENA.RAW')
+img = Util.apply_to_matrix(img, lambda x: [x,x,x], two_dim=True)
+Util.save(img, 'leemos_raw')

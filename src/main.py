@@ -1,19 +1,16 @@
 import numpy as np
-import cv2
-from matplotlib import pyplot as plt
 from kivy.app import App
-from kivy.graphics.context_instructions import Color
 from kivy.graphics.texture import Texture
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.dropdown import DropDown
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
-from input.util import Util
-from picture import Picture
+
+from src.input.util import Util
+from src.picture import Picture
 
 
 class Root(FloatLayout):
@@ -97,7 +94,7 @@ class Root(FloatLayout):
         self.draw_main_picture(self.img, self.is_color, self.img_pos)
 
     def draw_main_picture(self, img, is_color, position):
-        img_size = (img.shape[0],img.shape[1])
+        img_size = (img.shape[0], img.shape[1])
         texture = self.create_texture(img, is_color, img_size)
 
         self.picture = Picture(pos=position, size=img_size, img=img, is_color=is_color,
@@ -156,7 +153,7 @@ class Root(FloatLayout):
                 x = coord[0]
                 y = coord[1]
                 if self.is_color:
-                    self.value_input.text = '{} {} {}'.format(self.img[y, x, 0], self.img[y, x, 1],self.img[y, x, 2])
+                    self.value_input.text = '{} {} {}'.format(self.img[y, x, 0], self.img[y, x, 1], self.img[y, x, 2])
                 else:
                     self.value_input.text = str(self.img[y][x])
 
@@ -180,7 +177,7 @@ class Root(FloatLayout):
             x = int(self.x_input.text)
             y = int(self.y_input.text)
             if 0 <= x <= self.img.shape[0] and 0 <= y <= self.img.shape[1]:
-                return x,y
+                return x, y
             else:
                 return None
         except ValueError:
