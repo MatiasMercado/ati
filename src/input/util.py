@@ -172,6 +172,16 @@ class Util:
         return ans
 
     @staticmethod
+    def sliding_window_median(image, mask, border_policy=0):
+        ans = np.zeros(image.shape)
+        (image_width, image_height) = image.shape[0], image.shape[1]
+        for x in range(image_width):
+            for y in range(image_height):
+                for z in range(image.shape[2]):
+                    ans[x, y, z] = Util.apply_mask(image[:, :, z], (x, y), mask)
+        return ans
+
+    @staticmethod
     def apply_mask(image, center, mask, border_policy=0):
         (image_width, image_height) = image.shape
         (center_x, center_y) = center
@@ -199,13 +209,13 @@ class Util:
         return np.random.binomial(1, prob, shape)
 
     @staticmethod
-    def add_additive_noise_exponential(image, scale=1, prob=0.5):
+    def add_noise_exponential(image, scale=1, prob=0.5):
         aux = Util.multiply(
             np.random.exponential(scale, image.shape),
             Util.binary_matrix(image.shape, prob)
         )
         print(aux.shape)
-        aux = Util.sum(image, aux)
+        aux = Util.multiply(image, aux)
         print(aux.shape)
         return aux
 
@@ -279,7 +289,7 @@ class Util:
         return negative
 
     @staticmethod
-    def add_additive_noise_normal(image, mu=0, sigma=1):
-        Util.sum(image, np.random.rayleigh(mu, sigma, image.shape))
+    def add_noise_rayleigh(image, scale=1):
+        Util.multiply(image, np.random.rayleigh(scale=scale, size=image.shape))
 
 # img = Util.load_raw('LENA.RAW')
