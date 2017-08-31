@@ -127,7 +127,7 @@ class Util:
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
-                    negative[i][j] = 255 - negative[i][j][k]
+                    negative[i][j][k] = 255 - negative[i][j][k]
         return negative
 
     # @staticmethod
