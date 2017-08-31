@@ -265,7 +265,10 @@ class Util:
             np.random.exponential(scale, image.shape),
             Util.binary_matrix(image.shape, prob)
         )
-        return Util.sum(image, aux)
+        print(aux.shape)
+        aux = Util.sum(image, aux)
+        print(aux.shape)
+        return aux
 
     @staticmethod
     def add_additive_noise_normal(image, mu=0, sigma=1, prob=0.5):
@@ -305,11 +308,13 @@ class Util:
         return negative
 
     @staticmethod
-    def apply_to_matrix_with_position(matrix, func, independent_layer=False):
+    def apply_to_matrix_with_position(matrix, func, independent_layer=False, two_dim=False):
         negative = np.copy(matrix)
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
-                if independent_layer:
+                if two_dim:
+                    negative[i][j] = func(negative[i][j], i, j)
+                elif independent_layer:
                     for k in range(matrix.shape[2]):
                         negative[i][j][k] = func(negative[i][j][k], i, j)
                 else:
