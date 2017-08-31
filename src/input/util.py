@@ -7,11 +7,14 @@ import matplotlib.pyplot as plt
 
 class Util:
     @staticmethod
-    def load_raw(path):
-        image = np.fromfile(path, dtype='B')
-        print(image.shape)
-        print(256 * 256)
-        return image.reshape(256, 256)
+    def load_raw(path, size):
+        image = np.fromfile(path, dtype='B').reshape(size[0], size[1])
+        aux = np.zeros((image.shape[0], image.shape[1], 3))
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                aux[i][j] = [image[i][j], image[i][j], image[i][j]]
+        image = aux
+        return image.astype('B')
 
     # returns [image, isColor(boolean)]
     @staticmethod
@@ -161,10 +164,11 @@ class Util:
     @staticmethod
     def sliding_window(image, mask, border_policy=0):
         ans = np.zeros(image.shape)
-        (image_width, image_height) = image.shape
+        (image_width, image_height) = image.shape[0], image.shape[1]
         for x in range(image_width):
             for y in range(image_height):
-                ans[x, y] = Util.apply_mask(image, (x, y), mask)
+                for z in range(image.shape[2]):
+                    ans[x, y, z] = Util.apply_mask(image[:, :, z], (x, y), mask)
         return ans
 
     @staticmethod
@@ -173,19 +177,19 @@ class Util:
         (center_x, center_y) = center
         (mask_width, mask_height) = mask.shape
         acu = 0
-        for x in mask_width:
+        for x in range(mask_width):
             image_x = center_x - int(mask_width / 2) + x
             if image_x >= image_width:
                 image_x -= mask_width
             elif image_x < 0:
                 image_x += mask_width
-            for y in mask_height:
+            for y in range(mask_height):
                 image_y = center_y - int(mask_height / 2) + y
                 if image_y >= image_height:
                     image_y -= mask_height
                 elif image_y < 0:
                     image_y += mask_height
-                acu += mask(x, y) * image(image_x, image_y)
+                acu += mask[x][y] * image[image_x][image_y]
         return acu
 
     # (my_image, is_color) = Util.load_image('../../resources/lena.ascii.pbm')
@@ -224,7 +228,7 @@ class Util:
         return ret
 
     @staticmethod
-    def apply_to_matrix(matrix, func, independent_layer=False, two_dim = False):
+    def apply_to_matrix(matrix, func, independent_layer=False, two_dim=False):
         negative = np.copy(matrix)
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
@@ -235,6 +239,20 @@ class Util:
                         negative[i][j][k] = func(negative[i][j][k])
                 else:
                     aux = func(negative[i][j][0])
+                    for k in range(matrix.shape[2]):
+                        negative[i][j][k] = aux
+        return negative
+
+    @staticmethod
+    def apply_to_matrix_with_position(matrix, func, independent_layer=False):
+        negative = np.copy(matrix)
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                if independent_layer:
+                    for k in range(matrix.shape[2]):
+                        negative[i][j][k] = func(negative[i][j][k], i, j)
+                else:
+                    aux = func(negative[i][j][0], i, j)
                     for k in range(matrix.shape[2]):
                         negative[i][j][k] = aux
         return negative
@@ -259,7 +277,4 @@ class Util:
     def add_additive_noise_normal(image, mu=0, sigma=1):
         Util.sum(image, np.random.rayleigh(mu, sigma, image.shape))
 
-
-img = Util.load_raw('LENA.RAW')
-img = Util.apply_to_matrix(img, lambda x: [x,x,x], two_dim=True)
-Util.save(img, 'leemos_raw')
+# img = Util.load_raw('LENA.RAW')

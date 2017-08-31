@@ -1,6 +1,7 @@
 import numpy as np
 
 from src.input.distance_util import DistanceUtil
+from src.input.filter_provider import FilterProvider
 from src.input.util import Util
 
 
@@ -81,17 +82,22 @@ class Provider:
                     square[x, y] = 255
         return square
 
-myimg = Util.load_image('circle.pbm')[0]
+
+myimg = Util.load_raw('LENA.RAW', (256, 256))
 print(myimg.shape)
 # Util.save(myimg, 'original')
 myimg = Util.add_additive_noise_exponential(myimg, scale=5, prob=0.7)
-print(np.max(myimg))
-print(np.min(myimg))
-Util.save(myimg, 'exp')
-vec = np.random.exponential(2, 1000)
-vec = np.random.normal(0, 3, 1000)
-hist = np.histogram(vec, bins='auto')
-# plt.show()
-# print(hist)
-vec = np.random.binomial(1, 0.5, (5, 5))
-# print(vec)
+myimg = FilterProvider.blur(myimg, (10, 10))
+np.savetxt('blur', myimg[:, :, 0])
+
+
+# print(np.max(myimg))
+# print(np.min(myimg))
+# Util.save(myimg, 'exp')
+# vec = np.random.exponential(2, 1000)
+# vec = np.random.normal(0, 3, 1000)
+# hist = np.histogram(vec, bins='auto')
+# # plt.show()
+# # print(hist)
+# vec = np.random.binomial(1, 0.5, (5, 5))
+# # print(vec)
