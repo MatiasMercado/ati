@@ -9,6 +9,9 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 import matplotlib.pyplot as plt
+
+from input.filter_provider import FilterProvider
+from input.provider import Provider
 from src.input.util import Util
 from src.picture import Picture
 
@@ -67,6 +70,7 @@ class Root(FloatLayout):
         self.compression_btn = Button(text='Compression', size_hint=(1, None), height=30)
         self.gamma_btn = Button(text='Gamma', size_hint=(1, None), height=30)
         self.binary_btn = Button(text='Binary', size_hint=(1, None), height=30)
+        self.equalize_btn = Button(text='Equalize', size_hint=(1, None), height=30)
         self.histogram_btn = Button(text='Histogram', size_hint=(1, None), height=30)
         self.save_selection_btn = Button(text='Save Selection', size_hint=(1, None), height=30)
 
@@ -81,6 +85,7 @@ class Root(FloatLayout):
         self.binary_btn.bind(on_release=self.to_binary)
         self.gamma = 0.5
         self.gamma_btn.bind(on_release=self.gamma_function)
+        self.equalize_btn.bind(on_release=self.equalize)
         self.histogram_btn.bind(on_release=self.histogram)
         self.save_selection_btn.bind(on_release=self.save_selection)
 
@@ -90,6 +95,7 @@ class Root(FloatLayout):
         self.edit_drop_down.add_widget(self.compression_btn)
         self.edit_drop_down.add_widget(self.gamma_btn)
         self.edit_drop_down.add_widget(self.binary_btn)
+        self.edit_drop_down.add_widget(self.equalize_btn)
         self.edit_drop_down.add_widget(self.histogram_btn)
         self.edit_drop_down.add_widget(self.save_selection_btn)
 
@@ -125,17 +131,22 @@ class Root(FloatLayout):
         self.borders_filter_btn = Button(text='Borders', size_hint=(1, None), height=30)
 
         # Filter Bindings
-        # self.mean_filter_btn.bind(on_release=self.mean_filter)
-        # self.median_filter_btn.bind(on_release=self.median_filter)
-        # self.p_median_filter_btn.bind(on_release=self.p_median_filter)
-        # self.normal_filter_btn.bind(on_release=self.normal_filter)
-        # self.borders_filter_btn.bind(on_release=self.borders_filter)
+        self.mean_filter_size = (3, 3)
+        self.mean_filter_btn.bind(on_release=self.mean_filter)
+        self.median_filter_mask = np.matrix([[1,1,1], [1,1,1], [1,1,1]])
+        self.median_filter_btn.bind(on_release=self.median_filter)
+        self.p_median_filter_mask = np.matrix([[1,1,1], [1,1,1], [1,1,1]])
+        self.p_median_filter_btn.bind(on_release=self.p_median_filter)
+        self.normal_filter_size = (3, 3)
+        self.normal_filter_sigma = 0.5
+        self.normal_filter_btn.bind(on_release=self.normal_filter)
+        self.borders_filter_btn.bind(on_release=self.borders_filter)
 
-        self.noise_drop_down.add_widget(self.mean_filter_btn)
-        self.noise_drop_down.add_widget(self.median_filter_btn)
-        self.noise_drop_down.add_widget(self.p_median_filter_btn)
-        self.noise_drop_down.add_widget(self.normal_filter_btn)
-        self.noise_drop_down.add_widget(self.borders_filter_btn)
+        self.filter_drop_down.add_widget(self.mean_filter_btn)
+        self.filter_drop_down.add_widget(self.median_filter_btn)
+        self.filter_drop_down.add_widget(self.p_median_filter_btn)
+        self.filter_drop_down.add_widget(self.normal_filter_btn)
+        self.filter_drop_down.add_widget(self.borders_filter_btn)
 
         # Image Coordinates Labels and Inputs
         self.coordinates_label = Label(text='(x, y)')
@@ -245,6 +256,11 @@ class Root(FloatLayout):
             self.transformed_img = Util.gamma_power(self.img, self.gamma)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
+    def equalize(self, *args):
+        if self.img is not None:
+            self.transformed_img = Provider.equalize_histogram(self.img)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
     def normal_noise(self, *args):
         if self.img is not None:
             self.transformed_img = Util.add_additive_noise_normal(self.img, self.normal_mu,
@@ -266,11 +282,30 @@ class Root(FloatLayout):
             self.transformed_img = Util.add_comino_and_sugar_noise(self.img, self.salt_prob)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
-    # def mean_filter(self, *args):
-    # def median_filter(self, *args):
-    # def p_median_filter(self, *args):
-    # def normal_filter(self, *args):
-    # def borders_filter(self, *args):
+    def mean_filter(self, *args):
+        if self.img is not None:
+            self.transformed_img = FilterProvider.blur(self.img, self.mean_filter_size)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    def median_filter(self, *args):
+        if self.img is not None:
+            self.transformed_img = FilterProvider.sliding_window_median(self.img, self.median_filter_mask, False)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    def p_median_filter(self, *args):
+        if self.img is not None:
+            self.transformed_img = FilterProvider.sliding_window_median(self.img, self.p_median_filter_mask, True)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    def normal_filter(self, *args):
+        if self.img is not None:
+            self.transformed_img = FilterProvider.gauss_blur(self.img, self.normal_filter_size, self.normal_filter_sigma)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    def borders_filter(self, *args):
+        if self.img is not None:
+            self.transformed_img = FilterProvider.pasa_altos(self.img)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
     def to_binary(self, *args):
         if self.img is not None:
