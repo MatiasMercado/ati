@@ -113,6 +113,26 @@ class Root(FloatLayout):
         self.noise_drop_down.add_widget(self.exp_noise_btn)
         self.noise_drop_down.add_widget(self.salt_noise_btn)
 
+        # Filter Dropdown Button
+        self.mean_filter_btn = Button(text='Mean', size_hint=(1, None), height=30)
+        self.median_filter_btn = Button(text='Median', size_hint=(1, None), height=30)
+        self.p_median_filter_btn = Button(text='P. Median', size_hint=(1, None), height=30)
+        self.normal_filter_btn = Button(text='Normal', size_hint=(1, None), height=30)
+        self.borders_filter_btn = Button(text='Borders', size_hint=(1, None), height=30)
+
+        # Filter Bindings
+        # self.mean_filter_btn.bind(on_release=self.mean_filter)
+        # self.median_filter_btn.bind(on_release=self.median_filter)
+        # self.p_median_filter_btn.bind(on_release=self.p_median_filter)
+        # self.normal_filter_btn.bind(on_release=self.normal_filter)
+        # self.borders_filter_btn.bind(on_release=self.borders_filter)
+
+        self.noise_drop_down.add_widget(self.mean_filter_btn)
+        self.noise_drop_down.add_widget(self.median_filter_btn)
+        self.noise_drop_down.add_widget(self.p_median_filter_btn)
+        self.noise_drop_down.add_widget(self.normal_filter_btn)
+        self.noise_drop_down.add_widget(self.borders_filter_btn)
+
         # Image Coordinates Labels and Inputs
         self.coordinates_label = Label(text='(x, y)')
         self.x_input = TextInput(text='0', multiline=False)
@@ -241,6 +261,12 @@ class Root(FloatLayout):
         if self.img is not None:
             self.transformed_img = Util.add_comino_and_sugar_noise(self.img, self.salt_prob)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    # def mean_filter(self, *args):
+    # def median_filter(self, *args):
+    # def p_median_filter(self, *args):
+    # def normal_filter(self, *args):
+    # def borders_filter(self, *args):
 
     def histogram(self, *args):
         if self.img is not None:
