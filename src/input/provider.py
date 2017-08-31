@@ -82,22 +82,39 @@ class Provider:
                     square[x, y] = 255
         return square
 
+    @staticmethod
+    def save_raw(image, name='../../resources/blur.raw'):
+        image[:, :, 0].astype('B').tofile(name)
+
+    @staticmethod
+    def histogram(image):
+        aux = Util.linear_transform(image).astype('B')
+        h = np.zeros(256)
+        for p in aux.flatten():
+            h[p] = h[p] + 1
+        print(h)
+        return h
 
 myimg = Util.load_raw('LENA.RAW', (256, 256))
 print(myimg.shape)
 # Util.save(myimg, 'original')
-myimg = Util.add_additive_noise_exponential(myimg, scale=5, prob=0.7)
-myimg = FilterProvider.blur(myimg, (10, 10))
-np.savetxt('blur', myimg[:, :, 0])
+# myimg = Util.add_additive_noise_exponential(myimg, scale=50, prob=0.7)
+# myimg = FilterProvider.gauss_blur(myimg, (7, 7), 0.1).astype('B')
+myimg = FilterProvider.pasa_altos(myimg).astype('B')
+myimg = Util.to_binary(myimg, 30).astype('B')
+print(myimg[:, :, 0].shape)
+# np.savetxt('../../resources/blur.raw', myimg[:, :, 0])
 
 
-# print(np.max(myimg))
-# print(np.min(myimg))
+print(np.max(myimg))
+print(np.min(myimg))
 # Util.save(myimg, 'exp')
 # vec = np.random.exponential(2, 1000)
 # vec = np.random.normal(0, 3, 1000)
 # hist = np.histogram(vec, bins='auto')
-# # plt.show()
-# # print(hist)
+# plt.show()
+# print(hist)
+my_h = Provider.histogram(myimg)
 # vec = np.random.binomial(1, 0.5, (5, 5))
-# # print(vec)
+# print(vec)
+# Provider.save_raw(myimg)
