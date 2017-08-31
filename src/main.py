@@ -66,6 +66,7 @@ class Root(FloatLayout):
         self.contrast_btn = Button(text='Contrast', size_hint=(1, None), height=30)
         self.compression_btn = Button(text='Compression', size_hint=(1, None), height=30)
         self.gamma_btn = Button(text='Gamma', size_hint=(1, None), height=30)
+        self.binary_btn = Button(text='Binary', size_hint=(1, None), height=30)
         self.histogram_btn = Button(text='Histogram', size_hint=(1, None), height=30)
         self.save_selection_btn = Button(text='Save Selection', size_hint=(1, None), height=30)
 
@@ -73,11 +74,13 @@ class Root(FloatLayout):
         self.duplicate_btn.bind(on_release=self.duplicate)
         self.negative_btn.bind(on_release=self.negative)
         self.contrast_btn.bind(on_release=self.contrast)
-        self.compression_btn.bind(on_release=self.dynamic_compression)
         self.s1 = 70
         self.s2 = 150
-        self.gamma_btn.bind(on_release=self.gamma_function)
+        self.compression_btn.bind(on_release=self.dynamic_compression)
+        self.binary_threshold = 125
+        self.binary_btn.bind(on_release=self.to_binary)
         self.gamma = 0.5
+        self.gamma_btn.bind(on_release=self.gamma_function)
         self.histogram_btn.bind(on_release=self.histogram)
         self.save_selection_btn.bind(on_release=self.save_selection)
 
@@ -86,6 +89,7 @@ class Root(FloatLayout):
         self.edit_drop_down.add_widget(self.contrast_btn)
         self.edit_drop_down.add_widget(self.compression_btn)
         self.edit_drop_down.add_widget(self.gamma_btn)
+        self.edit_drop_down.add_widget(self.binary_btn)
         self.edit_drop_down.add_widget(self.histogram_btn)
         self.edit_drop_down.add_widget(self.save_selection_btn)
 
@@ -267,6 +271,11 @@ class Root(FloatLayout):
     # def p_median_filter(self, *args):
     # def normal_filter(self, *args):
     # def borders_filter(self, *args):
+
+    def to_binary(self, *args):
+        if self.img is not None:
+            self.transformed_img = Util.to_binary(self.img, self.binary_threshold)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
     def histogram(self, *args):
         if self.img is not None:
