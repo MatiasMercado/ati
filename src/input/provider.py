@@ -1,5 +1,5 @@
 import numpy as np
-
+from input.util import Util
 from src.input.distance_util import DistanceUtil
 import matplotlib.pyplot as plt
 from src.input.util import Util
@@ -83,10 +83,6 @@ class Provider:
         return square
 
     @staticmethod
-    def save_raw(image, name='../../resources/blur.raw'):
-        image[:, :, 0].astype('B').tofile(name)
-
-    @staticmethod
     def histogram(image):
         aux = Util.linear_transform(image).astype('B')
         h = np.zeros(256)
@@ -97,7 +93,7 @@ class Provider:
 
     @staticmethod
     def equalize_histogram(image):
-        my_h = np.histogram(myimg, bins=range(257), density=True)
+        my_h = np.histogram(image, bins=range(257), density=True)
         my_h_acu = my_h[0].copy()
         for i in range(256):
             if i != 0:
@@ -112,27 +108,23 @@ class Provider:
         return ans
 
 
-myimg = Util.load_raw('LENA.RAW', (256, 256))
-myimg = Util.load_raw('../../resources/GIRL.raw', (389, 164))
-myimg = Util.load_raw('../../resources/BARCO.raw', (290, 207))
-myimg = Util.load_raw('../../resources/GIRL2.raw', (256, 256))
-myimg = Util.load_raw('../../resources/LENAX.raw', (256, 256))
-# Util.save(myimg, 'original')
-# myimg = Util.add_additive_noise_exponential(myimg, scale=100, prob=0.9)
-# myimg = FilterProvider.gauss_blur(myimg, (7, 7), 0.1).astype('B')
-# myimg = FilterProvider.pasa_altos(myimg).astype('B')
-# myimg = Util.to_binary(myimg, 30).astype('B')
-# np.savetxt('../../resources/blur.raw', myimg[:, :, 0])
-
-# Util.save(myimg, 'exp')
-# vec = np.random.exponential(2, 1000)
-# vec = np.random.normal(0, 3, 1000)
-# hist = np.histogram(vec, bins='auto')
+# myimg = Util.load_raw('LENA.RAW', (256, 256))
+# # Util.save(myimg, 'original')
+# # myimg = Util.add_additive_noise_exponential(myimg, scale=100, prob=0.9)
+# # myimg = FilterProvider.gauss_blur(myimg, (7, 7), 0.1).astype('B')
+# # myimg = FilterProvider.pasa_altos(myimg).astype('B')
+# # myimg = Util.to_binary(myimg, 30).astype('B')
+# # np.savetxt('../../resources/blur.raw', myimg[:, :, 0])
+#
+# # Util.save(myimg, 'exp')
+# # vec = np.random.exponential(2, 1000)
+# # vec = np.random.normal(0, 3, 1000)
+# # hist = np.histogram(vec, bins='auto')
+# # plt.show()
+# # print(hist)
+#
+# plt.hist(myimg.flatten(), bins=range(256))
 # plt.show()
-# print(hist)
-
-plt.hist(myimg.flatten(), bins=range(256))
-plt.show()
-# vec = np.random.binomial(1, 0.5, (5, 5))
-# print(vec)
-# Provider.save_raw(myimg)
+# # vec = np.random.binomial(1, 0.5, (5, 5))
+# # print(vec)
+# # Provider.save_raw(myimg)

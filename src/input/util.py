@@ -1,8 +1,8 @@
 import cv2
+import math
 import numpy as np
-
-from src.input.distance_util import DistanceUtil
 import matplotlib.pyplot as plt
+from src.input.distance_util import DistanceUtil
 
 
 class Util:
@@ -64,13 +64,17 @@ class Util:
 
     @staticmethod
     def save(image, name):
-        print(np.min(image), np.max(image))
+        #print(np.min(image), np.max(image))
         image = Util.linear_transform(image)
-        print(np.min(image), np.max(image))
+        #print(np.min(image), np.max(image))
         image = image.astype('short')
-        print(np.min(image), np.max(image))
+        #print(np.min(image), np.max(image))
         img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
+
+    @staticmethod
+    def save_raw(image, name='../../resources/blur.raw'):
+        image[:, :, 0].astype('B').tofile(name)
 
     @staticmethod
     def to_binary(image, threshold):
@@ -116,7 +120,7 @@ class Util:
         # return np.multiply(img1, img2)
 
     @staticmethod
-    def linear_transform(image, final_range=(0, 255)):
+    def linear_transform(image, final_range=(0, 255), to_char=True):
         (final_min, final_max) = final_range
         final_difference = final_max - final_min
         size = image.shape
@@ -128,8 +132,10 @@ class Util:
             for y in range(height):
                 for z in range(3):
                     ans[x][y][z] = (image[x][y][z] - min_val) * final_difference / (max_val - min_val) + final_min
-                    if (ans[x][y][z] >= 255):
-                        print(image[x][y][z], ans[x][y][z])
+                    if(to_char):
+                        ans[x][y][z] = int(ans[x][y][z])
+        if (to_char):
+            return ans.astype('B')
         return ans
 
     @staticmethod
@@ -141,14 +147,73 @@ class Util:
 
     @staticmethod
     def negative(image):
-        # vfunc = np.vectorize(lambda p: 255 - p)
-        # return vfunc(image)
-        negative = np.copy(image)
+        ans = np.zeros(image.shape)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
-                    negative[i][j][k] = 255 - negative[i][j][k]
-        return negative
+                    ans[i][j][k] = 255 - image[i][j][k]
+        return ans
+
+    # ONLY FOR 2D MATRIX
+    @staticmethod
+    def dynamic_range_compression(image):
+        ans = np.zeros(image.shape)
+        R = image.max()
+        c = 255 / np.math.log(1 + R)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                ans[i][j] = c * np.math.log(1 + image[i][j])
+        return ans
+
+    # ONLY FOR 2D MATRIX
+    @staticmethod
+    def contrast_increase(image, s1, s2):
+        ans = np.zeros(image.shape)
+        #sigma = Util.standard_deviation(image)
+        sigma = np.std(image.ravel())
+        mean = image.mean()
+        r1 = max(mean - sigma, 0)
+        r2 = min(mean + sigma, 255)
+        m1 = (s1 / r1)
+        b1 = 0
+        f1 = lambda x:  m1 * x + b1
+        m2 = ((s2-s1) / (r2-r1))
+        b2 = s1 - m2 * r1
+        f2 = lambda x: m2 * x + b2
+        m3 = (255 - s2)/(255-r2)
+        b3 = s2 - m3 * r2
+        f3 = lambda x: m3 * x + b3
+
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                    if 0 <= image[i][j] <= r1:
+                        ans[i][j] = f1(image[i][j])
+                    elif r1<image[i][j]<=r2:
+                        ans[i][j] = f2(image[i][j])
+                    else:
+                        ans[i][j] = f3(image[i][j])
+        return ans
+
+    @staticmethod
+    def standard_deviation(matrix):
+        n = matrix.shape[0] * matrix.shape[1]
+        mean = matrix.mean()
+        sigma = 0
+
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                sigma += (matrix[i][j] - mean) ** 2
+        return (sigma / n)
+
+    @staticmethod
+    def gamma_power(image, gamma):
+        ans = np.zeros(image.shape)
+        c = pow(255, 1-gamma)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    ans[i][j][k] = c * pow(image[i][j][k], gamma)
+        return ans
 
         # @staticmethod
         # def gaussian_distr(x1, x2):
@@ -160,9 +225,6 @@ class Util:
     def box_muller(y1, y2):
         x2 = np.arctan(y2 / y1) / (2 * np.PI)
         # x1 = exp(-(y1 ** 2 + y2 ** 2) / 2)
-
-
-
 
     # (my_image, is_color) = Util.load_image('../../resources/lena.ascii.pbm')
     # print(Util.gray_hist(my_image[0]))
@@ -254,6 +316,6 @@ class Util:
     def add_noise_rayleigh(image, scale=1):
         return Util.multiply(image, np.random.rayleigh(scale=scale, size=image.shape))
 
-
-
 # img = Util.load_raw('LENA.RAW')
+# img = Util.apply_to_matrix(img, lambda x: [x,x,x], two_dim=True)
+# Util.save(img, 'leemos_raw')

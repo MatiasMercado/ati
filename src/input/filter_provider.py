@@ -59,7 +59,7 @@ class FilterProvider:
                     image_y -= mask_height
                 elif image_y < 0:
                     image_y += mask_height
-                acu += mask[x][y] * image[image_x][image_y]
+                acu += mask[x, y] * image[image_x][image_y]
         return acu
 
     @staticmethod
@@ -81,7 +81,7 @@ class FilterProvider:
                 elif image_y < 0:
                     image_y += mask_height
                 if weighted:
-                    for i in range(mask[x][y]):
+                    for i in range(mask[x,y]):
                         vec.append(image[image_x][image_y])
                 else:
                     vec.append(image[image_x][image_y])
