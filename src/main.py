@@ -55,15 +55,27 @@ class Root(FloatLayout):
         # Edit Dropdown Buttons
         self.duplicate_btn = Button(text='Duplicate', size_hint=(1, None), height=30)
         self.negative_btn = Button(text='Negative', size_hint=(1, None), height=30)
+        self.contrast_btn = Button(text='Contrast', size_hint=(1, None), height=30)
+        self.compression_btn = Button(text='Compression', size_hint=(1, None), height=30)
+        self.gamma_btn = Button(text='Gamma', size_hint=(1, None), height=30)
         self.save_selection_btn = Button(text='Save Selection', size_hint=(1, None), height=30)
 
         # Bindings
         self.duplicate_btn.bind(on_release=self.duplicate)
-        self.save_selection_btn.bind(on_release=self.save_selection)
         self.negative_btn.bind(on_release=self.negative)
+        self.contrast_btn.bind(on_release=self.contrast)
+        self.compression_btn.bind(on_release=self.dynamic_compression)
+        self.s1 = 70
+        self.s2 = 150
+        self.gamma_btn.bind(on_release=self.gamma_function)
+        self.gamma = 0.5
+        self.save_selection_btn.bind(on_release=self.save_selection)
 
         self.edit_drop_down.add_widget(self.duplicate_btn)
         self.edit_drop_down.add_widget(self.negative_btn)
+        self.edit_drop_down.add_widget(self.contrast_btn)
+        self.edit_drop_down.add_widget(self.compression_btn)
+        self.edit_drop_down.add_widget(self.gamma_btn)
         self.edit_drop_down.add_widget(self.save_selection_btn)
 
         # Image Coordinates Labels and Inputs
@@ -88,10 +100,11 @@ class Root(FloatLayout):
 
     def load(self, *args):
         # self.source = '../resources/lena.ascii.pbm'
-        # self.source = '../resources/test/BARCO.RAW'
+        self.source = '../resources/test/LENA.RAW'
         # self.source = '../resources/color.pbm'
-        self.source = '../resources/drow.png'
-        (self.img, self.is_color) = Util.load_image(self.source)
+        # self.source = '../resources/blur.raw'
+        (self.img, self.is_color) = Util.load_raw(self.source, (256, 256)), True
+        # (self.img, self.is_color) = Util.load_image(self.source)
         self.draw_main_picture(self.img, self.is_color, self.img_pos)
 
     def draw_main_picture(self, img, is_color, position):
@@ -105,8 +118,8 @@ class Root(FloatLayout):
             Rectangle(texture=texture, pos=position, size=img_size, group='main_image')
         self.add_widget(self.picture)
 
-    def draw_transformed_image(self, img, position):
-        # img = Util.linear_transform(image)
+    def draw_transformed_image(self, image, position):
+        img = Util.linear_transform(image)
         img_size = (img.shape[0], img.shape[1])
         texture = self.create_texture(img, self.is_color, img_size)
         self.transformed_picture = BoxLayout(pos=position, size=img_size)
@@ -143,9 +156,34 @@ class Root(FloatLayout):
             self.transformed_img = Util.negative(self.img)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
+    def contrast(self, *args):
+        if self.img is not None:
+            r = Util.transformed_img = Util.contrast_increase(self.img[:, :, 0], self.s1, self.s2)
+            g = Util.transformed_img = Util.contrast_increase(self.img[:, :, 1], self.s1, self.s2)
+            b = Util.transformed_img = Util.contrast_increase(self.img[:, :, 2], self.s1, self.s2)
+            self.transformed_img = self.merge_rgb(r, g, b)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
     def dynamic_compression(self, *args):
         if self.img is not None:
-            self.transformed_img = Util.dynamic_range_compression()
+            r = Util.dynamic_range_compression(self.img[:, :, 0])
+            g = Util.dynamic_range_compression(self.img[:, :, 1])
+            b = Util.dynamic_range_compression(self.img[:, :, 2])
+            self.transformed_img = self.merge_rgb(r, g, b)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    def merge_rgb(self, r, g, b):
+        ans = np.zeros((r.shape[0], r.shape[1], 3))
+        for i in range(r.shape[0]):
+            for j in range(r.shape[1]):
+                ans[i][j][0] = r[i][j]
+                ans[i][j][1] = g[i][j]
+                ans[i][j][2] = b[i][j]
+        return ans
+
+    def gamma_function(self, *args):
+        if self.img is not None:
+            self.transformed_img = Util.gamma_power(self.img, self.gamma)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
     def save_selection(self, *args):

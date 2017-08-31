@@ -2,6 +2,8 @@ import numpy as np
 
 from input.util import Util
 from src.input.distance_util import DistanceUtil
+from src.input.filter_provider import FilterProvider
+from src.input.util import Util
 
 
 class Provider:
@@ -81,10 +83,15 @@ class Provider:
                     square[x, y] = 255
         return square
 
-# myimg = Util.load_image('circle.pbm')[0]
-# print(myimg.shape)
-# # Util.save(myimg, 'original')
-# myimg = Util.add_additive_noise_exponential(myimg, scale=5, prob=0.7)
+
+myimg = Util.load_raw('LENA.RAW', (256, 256))
+print(myimg.shape)
+# Util.save(myimg, 'original')
+myimg = Util.add_additive_noise_exponential(myimg, scale=5, prob=0.7)
+myimg = FilterProvider.blur(myimg, (10, 10))
+np.savetxt('blur', myimg[:, :, 0])
+
+
 # print(np.max(myimg))
 # print(np.min(myimg))
 # Util.save(myimg, 'exp')

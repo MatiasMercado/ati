@@ -1,17 +1,20 @@
 import cv2
+import math
 import numpy as np
-
 from src.input.distance_util import DistanceUtil
 import matplotlib.pyplot as plt
 
 
 class Util:
     @staticmethod
-    def load_raw(path):
-        image = np.fromfile(path, dtype='B')
-        print(image.shape)
-        print(256 * 256)
-        return image.reshape(256, 256)
+    def load_raw(path, size):
+        image = np.fromfile(path, dtype='B').reshape(size[0], size[1])
+        aux = np.zeros((image.shape[0], image.shape[1], 3))
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                aux[i][j] = [image[i][j], image[i][j], image[i][j]]
+        image = aux
+        return image.astype('B')
 
     # returns [image, isColor(boolean)]
     @staticmethod
@@ -113,7 +116,7 @@ class Util:
         # return np.multiply(img1, img2)
 
     @staticmethod
-    def linear_transform(image, final_range=(0, 255)):
+    def linear_transform(image, final_range=(0, 255), to_char=True):
         (final_min, final_max) = final_range
         final_difference = final_max - final_min
         size = image.shape
@@ -125,8 +128,10 @@ class Util:
             for y in range(height):
                 for z in range(3):
                     ans[x][y][z] = (image[x][y][z] - min_val) * final_difference / (max_val - min_val) + final_min
-                    if (ans[x][y][z] >= 255):
-                        print(image[x][y][z], ans[x][y][z])
+                    if(to_char):
+                        ans[x][y][z] = int(ans[x][y][z])
+        if (to_char):
+            return ans.astype('B')
         return ans
 
     @staticmethod
@@ -142,7 +147,7 @@ class Util:
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
-                    ans[i][j][k] = 255 - ans[i][j][k]
+                    ans[i][j][k] = 255 - image[i][j][k]
         return ans
 
     # ONLY FOR 2D MATRIX
@@ -160,10 +165,11 @@ class Util:
     @staticmethod
     def contrast_increase(image, s1, s2):
         ans = np.zeros(image.shape)
-        sigma = Util.standard_deviation()
+        #sigma = Util.standard_deviation(image)
+        sigma = np.std(image.ravel())
         mean = image.mean()
-        r1 = mean + sigma
-        r2 = mean - sigma
+        r1 = max(mean - sigma, 0)
+        r2 = min(mean + sigma, 255)
         m1 = (s1 / r1)
         b1 = 0
         f1 = lambda x:  m1 * x + b1
@@ -186,14 +192,14 @@ class Util:
 
     @staticmethod
     def standard_deviation(matrix):
-        n = matrix.size[0] * matrix.size[1]
+        n = matrix.shape[0] * matrix.shape[1]
         mean = matrix.mean()
         sigma = 0
 
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
                 sigma += (matrix[i][j] - mean) ** 2
-        return (1 / n) * sigma
+        return (sigma / n)
 
     @staticmethod
     def gamma_power(image, gamma):
@@ -203,6 +209,7 @@ class Util:
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
                     ans[i][j][k] = c * pow(image[i][j][k], gamma)
+        return ans
 
         # @staticmethod
         # def gaussian_distr(x1, x2):
@@ -218,10 +225,11 @@ class Util:
     @staticmethod
     def sliding_window(image, mask, border_policy=0):
         ans = np.zeros(image.shape)
-        (image_width, image_height) = image.shape
+        (image_width, image_height) = image.shape[0], image.shape[1]
         for x in range(image_width):
             for y in range(image_height):
-                ans[x, y] = Util.apply_mask(image, (x, y), mask)
+                for z in range(image.shape[2]):
+                    ans[x, y, z] = Util.apply_mask(image[:, :, z], (x, y), mask)
         return ans
 
     @staticmethod
@@ -230,19 +238,19 @@ class Util:
         (center_x, center_y) = center
         (mask_width, mask_height) = mask.shape
         acu = 0
-        for x in mask_width:
+        for x in range(mask_width):
             image_x = center_x - int(mask_width / 2) + x
             if image_x >= image_width:
                 image_x -= mask_width
             elif image_x < 0:
                 image_x += mask_width
-            for y in mask_height:
+            for y in range(mask_height):
                 image_y = center_y - int(mask_height / 2) + y
                 if image_y >= image_height:
                     image_y -= mask_height
                 elif image_y < 0:
                     image_y += mask_height
-                acu += mask(x, y) * image(image_x, image_y)
+                acu += mask[x][y] * image[image_x][image_y]
         return acu
 
     # (my_image, is_color) = Util.load_image('../../resources/lena.ascii.pbm')
@@ -281,7 +289,7 @@ class Util:
         return ret
 
     @staticmethod
-    def apply_to_matrix(matrix, func, independent_layer=False, two_dim = False):
+    def apply_to_matrix(matrix, func, independent_layer=False, two_dim=False):
         negative = np.copy(matrix)
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
@@ -292,6 +300,20 @@ class Util:
                         negative[i][j][k] = func(negative[i][j][k])
                 else:
                     aux = func(negative[i][j][0])
+                    for k in range(matrix.shape[2]):
+                        negative[i][j][k] = aux
+        return negative
+
+    @staticmethod
+    def apply_to_matrix_with_position(matrix, func, independent_layer=False):
+        negative = np.copy(matrix)
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                if independent_layer:
+                    for k in range(matrix.shape[2]):
+                        negative[i][j][k] = func(negative[i][j][k], i, j)
+                else:
+                    aux = func(negative[i][j][0], i, j)
                     for k in range(matrix.shape[2]):
                         negative[i][j][k] = aux
         return negative
@@ -315,7 +337,6 @@ class Util:
     @staticmethod
     def add_additive_noise_normal(image, mu=0, sigma=1):
         Util.sum(image, np.random.rayleigh(mu, sigma, image.shape))
-
 
 # img = Util.load_raw('LENA.RAW')
 # img = Util.apply_to_matrix(img, lambda x: [x,x,x], two_dim=True)
