@@ -84,10 +84,6 @@ class Provider:
         return square
 
     @staticmethod
-    def save_raw(image, name='../../resources/blur.raw'):
-        image[:, :, 0].astype('B').tofile(name)
-
-    @staticmethod
     def histogram(image):
         aux = Util.linear_transform(image).astype('B')
         h = np.zeros(256)

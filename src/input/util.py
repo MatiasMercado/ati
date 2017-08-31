@@ -73,6 +73,10 @@ class Util:
         cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
 
     @staticmethod
+    def save_raw(image, name='../../resources/blur.raw'):
+        image[:, :, 0].astype('B').tofile(name)
+
+    @staticmethod
     def to_binary(image, threshold):
         vfunc = np.vectorize(lambda p: 255 if p > threshold else 0)
         return vfunc(image)

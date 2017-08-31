@@ -172,7 +172,7 @@ class Root(FloatLayout):
         # self.source = '../resources/lena.ascii.pbm'
         self.source = '../resources/test/LENA.RAW'
         # self.source = '../resources/color.pbm'
-        # self.source = '../resources/blur.raw'
+        # self.source = '../resources/selected_img_1'
         (self.img, self.is_color) = Util.load_raw(self.source, (256, 256)), True
         # (self.img, self.is_color) = Util.load_image(self.source)
         self.draw_main_picture(self.img, self.is_color, self.img_pos)
@@ -213,7 +213,8 @@ class Root(FloatLayout):
 
     def save(self, *args):
         if self.transformed_img is not None:
-            Util.save(self.transformed_img, '../resources/transformed_img_' + str(self.image_number))
+            #Util.save(self.transformed_img, '../resources/transformed_img_' + str(self.image_number))
+            Util.save_raw(self.transformed_img, '../resources/transformed_img_' + str(self.image_number))
             self.image_number += 1
 
     def duplicate(self, *args):
@@ -321,7 +322,8 @@ class Root(FloatLayout):
         if self.picture is not None and self.picture.is_selected:
             pixels = self.picture.get_selection_coordinates()
             selected_img = Util.trim(self.img, pixels[0], pixels[1])
-            Util.save(selected_img, '../resources/selected_img_' + str(self.selection_number))
+            # Util.save(selected_img, '../resources/selected_img_' + str(self.selection_number))
+            Util.save_raw(selected_img, '../resources/selected_img_' + str(self.selection_number))
             self.selection_number += 1
 
     def update_pixel_value_input(self, *args):
