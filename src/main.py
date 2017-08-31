@@ -8,7 +8,7 @@ from kivy.uix.dropdown import DropDown
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
-
+import matplotlib.pyplot as plt
 from src.input.util import Util
 from src.picture import Picture
 
@@ -66,6 +66,7 @@ class Root(FloatLayout):
         self.contrast_btn = Button(text='Contrast', size_hint=(1, None), height=30)
         self.compression_btn = Button(text='Compression', size_hint=(1, None), height=30)
         self.gamma_btn = Button(text='Gamma', size_hint=(1, None), height=30)
+        self.histogram_btn = Button(text='Histogram', size_hint=(1, None), height=30)
         self.save_selection_btn = Button(text='Save Selection', size_hint=(1, None), height=30)
 
         # Edit Bindings
@@ -77,6 +78,7 @@ class Root(FloatLayout):
         self.s2 = 150
         self.gamma_btn.bind(on_release=self.gamma_function)
         self.gamma = 0.5
+        self.histogram_btn.bind(on_release=self.histogram)
         self.save_selection_btn.bind(on_release=self.save_selection)
 
         self.edit_drop_down.add_widget(self.duplicate_btn)
@@ -84,6 +86,7 @@ class Root(FloatLayout):
         self.edit_drop_down.add_widget(self.contrast_btn)
         self.edit_drop_down.add_widget(self.compression_btn)
         self.edit_drop_down.add_widget(self.gamma_btn)
+        self.edit_drop_down.add_widget(self.histogram_btn)
         self.edit_drop_down.add_widget(self.save_selection_btn)
 
         # Noise Dropdown Buttons
@@ -97,7 +100,8 @@ class Root(FloatLayout):
         self.normal_sigma = 1
         self.normal_prob = 0.5
         self.normal_noise_btn.bind(on_release=self.normal_noise)
-        # self.rayleigh_noise_btn.bind(on_release=self.rayleigh_noise)
+        self.rayleigh_scale = 1
+        self.rayleigh_noise_btn.bind(on_release=self.rayleigh_noise)
         self.exp_scale = 1
         self.exp_prob = 0.5
         self.exp_noise_btn.bind(on_release=self.exp_noise)
@@ -223,11 +227,14 @@ class Root(FloatLayout):
                                                                   self.normal_sigma, self.salt_prob)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
-    # def rayleigh_noise(self):
+    def rayleigh_noise(self, *args):
+        if self.img is not None:
+            self.transformed_img = Util.add_noise_rayleigh(self.img, self.rayleigh_scale)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
     def exp_noise(self, *args):
         if self.img is not None:
-            self.transformed_img = Util.add_additive_noise_exponential(self.img, self.exp_scale, self.exp_prob)
+            self.transformed_img = Util.add_noise_exponential(self.img, self.exp_scale, self.exp_prob)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
     def salt_noise(self, *args):
@@ -235,8 +242,10 @@ class Root(FloatLayout):
             self.transformed_img = Util.add_comino_and_sugar_noise(self.img, self.salt_prob)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
-
-
+    def histogram(self, *args):
+        if self.img is not None:
+            plt.hist(self.img.flatten(), bins=range(256))
+            plt.show()
 
     def save_selection(self, *args):
         if self.picture is not None and self.picture.is_selected:
