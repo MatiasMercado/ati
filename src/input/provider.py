@@ -8,7 +8,7 @@ class Provider:
     @staticmethod
     def gray_gradient(size, min, max):
         (width, height) = size
-        img = np.zeros(size, dtype=np.short)
+        img = np.zeros(size)
         for x in range(width):
             for y in range(height):
                 img[x, y] = x * (max - min) / (width - 1) + min
@@ -61,12 +61,14 @@ class Provider:
     @staticmethod
     def draw_circle(size, radius):
         (width, height) = size
-        circle = np.zeros(size, dtype=np.short)
+        circle = np.zeros((width, height, 3), dtype=np.short)
         center = (width / 2, height / 2)
         for x in range(width):
             for y in range(height):
-                if DistanceUtil.euclidean_distance_lower_than(center, (x, y), radius):
-                    circle[x, y] = 255
+                for z in range(3):
+                    if DistanceUtil.euclidean_distance_lower_than(center, (x, y), radius):
+                        circle[x, y, z] = 255
+        return circle
 
     @staticmethod
     def draw_square(size, side):
@@ -77,3 +79,19 @@ class Provider:
             for y in range(height):
                 if DistanceUtil.chebyshev_distance_lower_than(center, (x, y), side):
                     square[x, y] = 255
+        return square
+
+# myimg = Util.load_image('circle.pbm')[0]
+# print(myimg.shape)
+# # Util.save(myimg, 'original')
+# myimg = Util.add_additive_noise_exponential(myimg, scale=5, prob=0.7)
+# print(np.max(myimg))
+# print(np.min(myimg))
+# Util.save(myimg, 'exp')
+# vec = np.random.exponential(2, 1000)
+# vec = np.random.normal(0, 3, 1000)
+# hist = np.histogram(vec, bins='auto')
+# # plt.show()
+# # print(hist)
+# vec = np.random.binomial(1, 0.5, (5, 5))
+# # print(vec)
