@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 from src.input.distance_util import DistanceUtil
+import matplotlib.pyplot as plt
 
 
 class Util:
@@ -94,6 +95,10 @@ class Util:
         return np.sum(img1, img2)
 
     @staticmethod
+    def multiply(img1, img2):
+        return np.multiply(img1, img2)
+
+    @staticmethod
     def linear_transform(image, final_range=(0, 255)):
         (final_min, final_max) = final_range
         final_difference = final_max - final_min
@@ -119,13 +124,14 @@ class Util:
         # vfunc = np.vectorize(lambda p: 255 - p)
         # return vfunc(image)
         negative = np.copy(image)
-        for i in range(512):
-            for j in range(512):
-                negative[i][j] = 255 - negative[i][j]
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    negative[i][j] = 255 - negative[i][j][k]
         return negative
 
-        # @staticmethod
-        # def gaussian_distr(x1, x2):
+    # @staticmethod
+    # def gaussian_distr(x1, x2):
         # y1 = np.sqrt(-2 * log(x1)) * cos(2 * np.PI * x2)
         # y2 = np.sqrt(-2 * log(x1)) * sin(2 * np.PI * x2)
         # return y1, y2
@@ -165,5 +171,50 @@ class Util:
                 acu += mask(x, y) * image(image_x, image_y)
         return acu
 
-# (my_image, is_color) = Util.load_image('../../resources/lena.ascii.pbm')
-# print(Util.gray_hist(my_image[0]))
+    # (my_image, is_color) = Util.load_image('../../resources/lena.ascii.pbm')
+    # print(Util.gray_hist(my_image[0]))
+    @staticmethod
+    def binary_matrix(shape, prob=0.5):
+        return np.random.binomial(1, prob, shape)
+
+    @staticmethod
+    def add_additive_noise_exponential(image, scale=1, prob=0.5):
+        return Util.sum(image, Util.multiply(
+            np.random.exponential(scale, image.shape),
+            Util.binary_matrix(image.shape, prob)
+        ))
+
+    @staticmethod
+    def add_additive_noise_normal(image, mu=0, sigma=1, prob=0.5):
+        return Util.sum(image, Util.multiply(
+            np.random.normal(mu, sigma, image.shape),
+            Util.binary_matrix(image.shape, prob)
+        ))
+
+    @staticmethod
+    def single_comino_and_sugar(value, prob):
+        r = np.random.random()
+        if r > prob:
+            return value
+        if r > prob / 2:
+            return 255
+        return 0
+
+    @staticmethod
+    def add_comino_and_sugar_noise(image, prob=0.5):
+        vfunc = np.vectorize(lambda p: Util.single_comino_and_sugar(p, prob))
+        return vfunc(image)
+
+    @staticmethod
+    def add_additive_noise_normal(image, mu=0, sigma=1):
+        Util.sum(image, np.random.normal(mu, sigma, image.shape))
+
+
+vec = np.random.exponential(2, 1000)
+vec = np.random.normal(0, 3, 1000)
+hist = np.histogram(vec, bins='auto')
+plt.hist(vec, bins='auto')
+# plt.show()
+print(hist)
+vec = np.random.binomial(1, 0.5, (5, 5))
+print(vec)
