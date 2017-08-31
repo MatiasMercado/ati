@@ -96,44 +96,38 @@ class Provider:
         print(h)
         return h
 
+    @staticmethod
+    def equalize_histogram(image):
+        my_h = np.histogram(myimg, bins=range(257), density=True)
+        my_h_acu = my_h[0].copy()
+        for i in range(256):
+            if i != 0:
+                my_h_acu[i] = my_h_acu[i - 1] + my_h[0][i]
+        min_h = np.min(my_h_acu)
+        for i in range(256):
+            if my_h_acu[i] == 1:
+                my_h_acu[i] = 255
+            else:
+                my_h_acu[i] = np.round((my_h_acu[i] - min_h) * 255 / (1 - min_h))
+        ans = Util.apply_to_matrix(image, lambda p: my_h_acu[p])
+        return ans
+
 
 myimg = Util.load_raw('LENA.RAW', (256, 256))
-print(myimg.shape)
 # Util.save(myimg, 'original')
 # myimg = Util.add_additive_noise_exponential(myimg, scale=100, prob=0.9)
 # myimg = FilterProvider.gauss_blur(myimg, (7, 7), 0.1).astype('B')
 # myimg = FilterProvider.pasa_altos(myimg).astype('B')
 # myimg = Util.to_binary(myimg, 30).astype('B')
-print(myimg[:, :, 0].shape)
 # np.savetxt('../../resources/blur.raw', myimg[:, :, 0])
 
-print(np.max(myimg))
-print(np.min(myimg))
 # Util.save(myimg, 'exp')
 # vec = np.random.exponential(2, 1000)
 # vec = np.random.normal(0, 3, 1000)
 # hist = np.histogram(vec, bins='auto')
 # plt.show()
 # print(hist)
-my_h = np.histogram(myimg, bins=range(257), density=True)
-print(my_h)
-print(my_h[0].shape)
-my_h_acu = my_h[0].copy()
-for i in range(256):
-    if i != 0:
-        my_h_acu[i] = my_h_acu[i - 1] + my_h[0][i]
 
-plt.hist(myimg.flatten(), bins=range(256))
-min_h = np.min(my_h_acu)
-for i in range(256):
-    if my_h_acu[i] == 1:
-        my_h_acu[i] = 255
-    else:
-        my_h_acu[i] = np.round((my_h_acu[i] - min_h) * 255 / (1 - min_h))
-
-print(my_h_acu)
-myimg = Util.apply_to_matrix(myimg, lambda p: my_h_acu[p])
-Provider.save_raw(myimg)
 plt.hist(myimg.flatten(), bins=range(256))
 plt.show()
 # vec = np.random.binomial(1, 0.5, (5, 5))
