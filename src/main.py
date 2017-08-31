@@ -23,8 +23,8 @@ class Root(FloatLayout):
         # Reference to the image matrix
         self.img = None
         self.transformed_img = None
-        self.img_pos = (50, 50)
-        self.transformed_img_pos = (600, 50)
+        self.img_pos = (50, 250)
+        self.transformed_img_pos = (600, 250)
 
         # Used for saving images
         self.image_number = 1
@@ -115,7 +115,7 @@ class Root(FloatLayout):
         self.exp_scale = 1
         self.exp_prob = 0.5
         self.exp_noise_btn.bind(on_release=self.exp_noise)
-        self.salt_prob = 0.5
+        self.salt_prob = (0.25, 0.25)
         self.salt_noise_btn.bind(on_release=self.salt_noise)
 
         self.noise_drop_down.add_widget(self.normal_noise_btn)
@@ -133,9 +133,9 @@ class Root(FloatLayout):
         # Filter Bindings
         self.mean_filter_size = (3, 3)
         self.mean_filter_btn.bind(on_release=self.mean_filter)
-        self.median_filter_mask = np.matrix([[1,1,1], [1,1,1], [1,1,1]])
+        self.median_filter_mask = np.matrix([[1, 3, 1], [3, 5, 3], [1, 3, 1]])
         self.median_filter_btn.bind(on_release=self.median_filter)
-        self.p_median_filter_mask = np.matrix([[1,1,1], [1,1,1], [1,1,1]])
+        self.p_median_filter_mask = np.matrix([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
         self.p_median_filter_btn.bind(on_release=self.p_median_filter)
         self.normal_filter_size = (3, 3)
         self.normal_filter_sigma = 0.5
@@ -170,10 +170,10 @@ class Root(FloatLayout):
 
     def load(self, *args):
         # self.source = '../resources/lena.ascii.pbm'
-        self.source = '../resources/test/LENA.RAW'
+        self.source = '../resources/circle_with_comino'
         # self.source = '../resources/color.pbm'
         # self.source = '../resources/selected_img_1'
-        (self.img, self.is_color) = Util.load_raw(self.source, (256, 256)), True
+        (self.img, self.is_color) = Util.load_raw(self.source, (100, 100)), True
         # (self.img, self.is_color) = Util.load_image(self.source)
         self.draw_main_picture(self.img, self.is_color, self.img_pos)
 
@@ -191,6 +191,7 @@ class Root(FloatLayout):
     def draw_transformed_image(self, image, position):
         img = Util.linear_transform(image)
         img_size = (img.shape[0], img.shape[1])
+
         texture = self.create_texture(img, self.is_color, img_size)
         self.transformed_picture = BoxLayout(pos=position, size=img_size)
         self.canvas.remove_group('transform')
@@ -213,7 +214,7 @@ class Root(FloatLayout):
 
     def save(self, *args):
         if self.transformed_img is not None:
-            #Util.save(self.transformed_img, '../resources/transformed_img_' + str(self.image_number))
+            # Util.save(self.transformed_img, '../resources/transformed_img_' + str(self.image_number))
             Util.save_raw(self.transformed_img, '../resources/transformed_img_' + str(self.image_number))
             self.image_number += 1
 
@@ -290,7 +291,7 @@ class Root(FloatLayout):
 
     def median_filter(self, *args):
         if self.img is not None:
-            self.transformed_img = FilterProvider.sliding_window_median(self.img, self.median_filter_mask, False)
+            self.transformed_img = FilterProvider.median_filter(self.img, self.median_filter_mask, False)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
     def p_median_filter(self, *args):
@@ -300,7 +301,8 @@ class Root(FloatLayout):
 
     def normal_filter(self, *args):
         if self.img is not None:
-            self.transformed_img = FilterProvider.gauss_blur(self.img, self.normal_filter_size, self.normal_filter_sigma)
+            self.transformed_img = FilterProvider.gauss_blur(self.img, self.normal_filter_size,
+                                                             self.normal_filter_sigma)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
     def borders_filter(self, *args):

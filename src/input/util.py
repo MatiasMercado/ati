@@ -64,11 +64,11 @@ class Util:
 
     @staticmethod
     def save(image, name):
-        #print(np.min(image), np.max(image))
+        # print(np.min(image), np.max(image))
         image = Util.linear_transform(image)
-        #print(np.min(image), np.max(image))
+        # print(np.min(image), np.max(image))
         image = image.astype('short')
-        #print(np.min(image), np.max(image))
+        # print(np.min(image), np.max(image))
         img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
 
@@ -132,7 +132,7 @@ class Util:
             for y in range(height):
                 for z in range(3):
                     ans[x][y][z] = (image[x][y][z] - min_val) * final_difference / (max_val - min_val) + final_min
-                    if(to_char):
+                    if (to_char):
                         ans[x][y][z] = int(ans[x][y][z])
         if (to_char):
             return ans.astype('B')
@@ -169,29 +169,30 @@ class Util:
     @staticmethod
     def contrast_increase(image, s1, s2):
         ans = np.zeros(image.shape)
-        #sigma = Util.standard_deviation(image)
         sigma = np.std(image.ravel())
         mean = image.mean()
-        r1 = max(mean - sigma, 0)
-        r2 = min(mean + sigma, 255)
+        r1 = mean - sigma
+        r2 = mean + sigma
+        if r1 <= 0 or r2 >= 255:
+            return image
         m1 = (s1 / r1)
         b1 = 0
-        f1 = lambda x:  m1 * x + b1
-        m2 = ((s2-s1) / (r2-r1))
+        f1 = lambda x: m1 * x + b1
+        m2 = ((s2 - s1) / (r2 - r1))
         b2 = s1 - m2 * r1
         f2 = lambda x: m2 * x + b2
-        m3 = (255 - s2)/(255-r2)
+        m3 = (255 - s2) / (255 - r2)
         b3 = s2 - m3 * r2
         f3 = lambda x: m3 * x + b3
 
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                    if 0 <= image[i][j] <= r1:
-                        ans[i][j] = f1(image[i][j])
-                    elif r1<image[i][j]<=r2:
-                        ans[i][j] = f2(image[i][j])
-                    else:
-                        ans[i][j] = f3(image[i][j])
+                if 0 <= image[i][j] <= r1:
+                    ans[i][j] = f1(image[i][j])
+                elif r1 < image[i][j] <= r2:
+                    ans[i][j] = f2(image[i][j])
+                else:
+                    ans[i][j] = f3(image[i][j])
         return ans
 
     @staticmethod
@@ -203,12 +204,12 @@ class Util:
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
                 sigma += (matrix[i][j] - mean) ** 2
-        return (sigma / n)
+        return np.sqrt(sigma / n)
 
     @staticmethod
     def gamma_power(image, gamma):
         ans = np.zeros(image.shape)
-        c = pow(255, 1-gamma)
+        c = pow(255, 1 - gamma)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
@@ -251,17 +252,17 @@ class Util:
         ))
 
     @staticmethod
-    def single_comino_and_sugar(value, prob):
+    def single_comino_and_sugar(value, probs):
         r = np.random.random()
-        if r > prob:
+        if r > probs[0] + probs[1]:
             return value
-        if r > prob / 2:
+        if r > probs[0]:
             return 255
         return 0
 
     @staticmethod
-    def add_comino_and_sugar_noise(image, prob=0.5):
-        ret = Util.apply_to_matrix(image, lambda p: Util.single_comino_and_sugar(p, prob))
+    def add_comino_and_sugar_noise(image, probs=(0.25,0.25)):
+        ret = Util.apply_to_matrix(image, lambda p: Util.single_comino_and_sugar(p, probs))
         return ret
 
     @staticmethod

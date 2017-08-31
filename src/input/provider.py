@@ -1,7 +1,5 @@
 import numpy as np
-from input.util import Util
 from src.input.distance_util import DistanceUtil
-import matplotlib.pyplot as plt
 from src.input.util import Util
 
 
@@ -108,6 +106,8 @@ class Provider:
         return ans
 
 
+# img = Provider.draw_circle((100,100), 28)
+# Util.save_raw(img, '../../resources/circle')
 # myimg = Util.load_raw('LENA.RAW', (256, 256))
 # # Util.save(myimg, 'original')
 # # myimg = Util.add_additive_noise_exponential(myimg, scale=100, prob=0.9)
