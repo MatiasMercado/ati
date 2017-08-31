@@ -33,21 +33,29 @@ class Root(FloatLayout):
         self.transformed_picture = None
 
         # Button Groups
-        self.button_bar = BoxLayout(size_hint=(.5, .05), pos_hint={'top': 1})
+        self.button_bar = BoxLayout(size_hint=(1, .05), pos_hint={'top': 1})
         self.coordinates = BoxLayout(size_hint=(1, .05), pos_hint={'x': 0}, spacing=5)
 
         # Buttons
         self.load_button = Button(text='Load')
         self.edit_button = Button(text='Edit')
+        self.noise_button = Button(text='Noise')
+        self.filter_button = Button(text='Filter')
         self.save_button = Button(text='Save')
         self.edit_drop_down = DropDown()
+        self.noise_drop_down = DropDown()
+        self.filter_drop_down = DropDown()
 
         self.load_button.bind(on_release=self.load)
         self.edit_button.bind(on_release=self.edit_drop_down.open)
+        self.noise_button.bind(on_release=self.noise_drop_down.open)
+        self.filter_button.bind(on_release=self.filter_drop_down.open)
         self.save_button.bind(on_release=self.save)
 
         self.button_bar.add_widget(self.load_button)
         self.button_bar.add_widget(self.edit_button)
+        self.button_bar.add_widget(self.noise_button)
+        self.button_bar.add_widget(self.filter_button)
         self.button_bar.add_widget(self.save_button)
 
         self.add_widget(self.button_bar)
@@ -60,7 +68,7 @@ class Root(FloatLayout):
         self.gamma_btn = Button(text='Gamma', size_hint=(1, None), height=30)
         self.save_selection_btn = Button(text='Save Selection', size_hint=(1, None), height=30)
 
-        # Bindings
+        # Edit Bindings
         self.duplicate_btn.bind(on_release=self.duplicate)
         self.negative_btn.bind(on_release=self.negative)
         self.contrast_btn.bind(on_release=self.contrast)
@@ -77,6 +85,29 @@ class Root(FloatLayout):
         self.edit_drop_down.add_widget(self.compression_btn)
         self.edit_drop_down.add_widget(self.gamma_btn)
         self.edit_drop_down.add_widget(self.save_selection_btn)
+
+        # Noise Dropdown Buttons
+        self.normal_noise_btn = Button(text='Normal', size_hint=(1, None), height=30)
+        self.rayleigh_noise_btn = Button(text='Rayleigh', size_hint=(1, None), height=30)
+        self.exp_noise_btn = Button(text='Exp', size_hint=(1, None), height=30)
+        self.salt_noise_btn = Button(text='Salt', size_hint=(1, None), height=30)
+
+        # Noise Bindings
+        self.normal_mu = 0
+        self.normal_sigma = 1
+        self.normal_prob = 0.5
+        self.normal_noise_btn.bind(on_release=self.normal_noise)
+        # self.rayleigh_noise_btn.bind(on_release=self.rayleigh_noise)
+        self.exp_scale = 1
+        self.exp_prob = 0.5
+        self.exp_noise_btn.bind(on_release=self.exp_noise)
+        self.salt_prob = 0.5
+        self.salt_noise_btn.bind(on_release=self.salt_noise)
+
+        self.noise_drop_down.add_widget(self.normal_noise_btn)
+        self.noise_drop_down.add_widget(self.rayleigh_noise_btn)
+        self.noise_drop_down.add_widget(self.exp_noise_btn)
+        self.noise_drop_down.add_widget(self.salt_noise_btn)
 
         # Image Coordinates Labels and Inputs
         self.coordinates_label = Label(text='(x, y)')
@@ -185,6 +216,27 @@ class Root(FloatLayout):
         if self.img is not None:
             self.transformed_img = Util.gamma_power(self.img, self.gamma)
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    def normal_noise(self, *args):
+        if self.img is not None:
+            self.transformed_img = Util.add_additive_noise_normal(self.img, self.normal_mu,
+                                                                  self.normal_sigma, self.salt_prob)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    # def rayleigh_noise(self):
+
+    def exp_noise(self, *args):
+        if self.img is not None:
+            self.transformed_img = Util.add_additive_noise_exponential(self.img, self.exp_scale, self.exp_prob)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    def salt_noise(self, *args):
+        if self.img is not None:
+            self.transformed_img = Util.add_comino_and_sugar_noise(self.img, self.salt_prob)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+
+
 
     def save_selection(self, *args):
         if self.picture is not None and self.picture.is_selected:
