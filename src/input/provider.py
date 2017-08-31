@@ -1,7 +1,7 @@
 import numpy as np
 
+from input.util import Util
 from src.input.distance_util import DistanceUtil
-from src.input.util import Util
 
 
 class Provider:
@@ -34,7 +34,7 @@ class Provider:
 
     @staticmethod
     def get_rgb_p(C, X, H):
-        print(C, X, H)
+        #print(C, X, H)
         h = int(H / 60)
         if h == 0:
             return C, X, 0

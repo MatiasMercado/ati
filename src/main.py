@@ -90,9 +90,10 @@ class Root(FloatLayout):
         self.add_widget(self.coordinates)
 
     def load(self, *args):
-        #self.source = '../resources/lena.ascii.pbm'
-        self.source = '../resources/color.pbm'
-        # self.source = '../resources/drow.png'
+        # self.source = '../resources/lena.ascii.pbm'
+        # self.source = '../resources/test/BARCO.RAW'
+        # self.source = '../resources/color.pbm'
+        self.source = '../resources/drow.png'
         (self.img, self.is_color) = Util.load_image(self.source)
         self.draw_main_picture(self.img, self.is_color, self.img_pos)
 
@@ -108,6 +109,7 @@ class Root(FloatLayout):
         self.add_widget(self.picture)
 
     def draw_transformed_image(self, img, position):
+        # img = Util.linear_transform(image)
         img_size = (img.shape[0], img.shape[1])
         texture = self.create_texture(img, self.is_color, img_size)
         self.transformed_picture = BoxLayout(pos=position, size=img_size)
@@ -142,6 +144,11 @@ class Root(FloatLayout):
     def negative(self, *args):
         if self.img is not None:
             self.transformed_img = Util.negative(self.img)
+            self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
+
+    def dynamic_compression(self, *args):
+        if self.img is not None:
+            self.transformed_img = Util.dynamic_range_compression()
             self.draw_transformed_image(self.transformed_img, self.transformed_img_pos)
 
     def save_selection(self, *args):

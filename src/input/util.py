@@ -22,7 +22,12 @@ class Util:
             if is_color:
                 break
         if is_color:
+            print(img.shape)
+            print(img)
+            print('Color')
+            print(img[:, :, 1])
             return img, True
+        print('B&W')
         return img[:, :, 1], False
 
     # deprecated
@@ -54,8 +59,9 @@ class Util:
 
     @staticmethod
     def save(image, name):
-        img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
+        # img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
+        cv2.imwrite(name + ".pbm", image, (cv2.IMWRITE_PXM_BINARY, 0))
 
     @staticmethod
     def to_binary(image, threshold):
@@ -121,12 +127,71 @@ class Util:
 
     @staticmethod
     def negative(image):
-        negative = np.copy(image)
+        ans = np.zeros(image.shape)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
-                    negative[i][j][k] = 255 - negative[i][j][k]
-        return negative
+                    ans[i][j][k] = 255 - ans[i][j][k]
+        return ans
+
+    @staticmethod
+    def dynamic_range_compression(image):
+        ans = np.zeros(image.shape)
+        R = image.max()
+        c = 255 / np.math.log(1 + R)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    ans[i][j][k] = c * np.math.log(1 + image[i][j][k])
+        return ans
+
+    @staticmethod
+    def contrast_increase(image, s1, s2):
+        ans = np.zeros(image.shape)
+        sigma = Util.standard_deviation()
+        mean = image.mean()
+        r1 = mean + sigma
+        r2 = mean - sigma
+        m1 = (s1 / r1)
+        b1 = 0
+        f1 = lambda x:  m1 * x + b1
+        m2 = ((s2-s1) / (r2-r1))
+        b2 = s1 - m2 * r1
+        f2 = lambda x: m2 * x + b2
+        m3 = (255 - s2)/(255-r2)
+        b3 = s2 - m3 * r2
+        f3 = lambda x: m3 * x + b3
+
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    if 0 <= image[i][j][k] <= r1:
+                        ans[i][j][k] = f1(image[i][j][k])
+                    elif r1<image[i][j][k]<=r2:
+                        ans[i][j][k] = f2(image[i][j][k])
+                    else:
+                        ans[i][j][k] = f3(image[i][j][k])
+        return ans
+
+    @staticmethod
+    def standard_deviation(matrix):
+        n = matrix.size[0] * matrix.size[1]
+        mean = matrix.mean()
+        sigma = 0
+
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                sigma += (matrix[i][j] - mean) ** 2
+        return (1 / n) * sigma
+
+    @staticmethod
+    def gamma_power(image, gamma):
+        ans = np.zeros(image.shape)
+        c = pow(255, 1-gamma)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    ans[i][j][k] = c * pow(image[i][j][k], gamma)
 
     # @staticmethod
     # def gaussian_distr(x1, x2):
@@ -216,3 +281,5 @@ class Util:
 # print(hist)
 # vec = np.random.binomial(1, 0.5, (5, 5))
 # print(vec)
+
+
