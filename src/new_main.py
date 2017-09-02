@@ -13,16 +13,20 @@ class ImageEditor(tk.Frame):
         self.grid(sticky=tk.N + tk.S + tk.E + tk.W)
         # self.create_menu()
         self.image_number = 1
+        # self.active_window = tk.StringVar()
+        self.active_window = tk.StringVar()
+        # self.active_windows[event.num] = ...
         self.create_menu()
         self.open_images = {}
         self.path = '../resources/test/BARCO.RAW'
         self.size = (290, 207)
 
-        #     File = askopenfilename(parent=root, initialdir="C:/",title='Choose an image.')
+        # File = askopenfilename(parent=root, initialdir="C:/",title='Choose an image.')
 
 
         # Create Image Button
-        self.quitButton = tk.Button(self, text='Click MEEEE', command=self.create_new_image).grid(row=0, column=0)
+        self.quitButton = tk.Button(self, text='Create', command=self.create_new_image).grid(row=0, column=0)
+        self.quitButton = tk.Button(self, text='Pick One', command=self.duplicate).grid(row=0, column=1)
 
     def create_menu(self):
         root = self.master
@@ -59,17 +63,35 @@ class ImageEditor(tk.Frame):
         width = img_data.shape[1]
 
         new_window = tk.Toplevel()
+
         new_window.geometry('{}x{}'.format(width, height))
         new_window.resizable(width=False, height=False)
         # new_window.title('Image {}'.format(self.image_number))
         new_window.title('Image {}'.format(self.image_number))
+
+        new_window.bind('<ButtonRelease-1>', self.set_active_window)
+        #### new_window.bind('<Destroy>', ) ### Bind Destroy to remove img from set
+
         self.image_number += 1
         canvas = tk.Canvas(new_window, width=width, height=height)
         canvas = tk.Canvas(new_window)
         canvas.grid(row=0, column=0)
         canvas.create_image(-.5, -.5, image=tk_img, anchor=tk.NW)
         canvas.my_image = tk_img # Used only to prevent image being destroy by garbage collector
-        self.open_images[new_window.title] = tk_img
+        self.open_images[new_window.title()] = tk_img
+
+    def set_active_window(self, event):
+        self.active_window.set(event.widget.winfo_toplevel().title())
+
+    def duplicate(self):
+        print("Waiting...")
+        self.wait_variable(self.active_window)
+        print('Active Window: {}'.format(self.active_window.get()))
+        img1 = self.open_images[self.active_window.get()]
+        self.wait_variable(self.active_window)
+        print('Active Window: {}'.format(self.active_window.get()))
+
+        self.label = tk.Label(image=img1).grid()
 
     def create_image(self):
         top = self.winfo_toplevel()
