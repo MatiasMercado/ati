@@ -18,9 +18,6 @@ class ImageEditor(tk.Frame):
         self.active_window = tk.StringVar()
         self.create_menu()
         self.open_images = {}
-        self.path = '../resources/test/BARCO.RAW'
-        self.size = (290, 207)
-        # File = askopenfilename(parent=root, initialdir="C:/",title='Choose an image.')
 
         # Parameters
 
@@ -32,7 +29,7 @@ class ImageEditor(tk.Frame):
         self.gamma = 0.5
 
         # Binary
-        self.binary_threshold = 100
+        self.binary_threshold = 10
 
         # Scalar Product
         self.scalar = 1.2
@@ -58,7 +55,6 @@ class ImageEditor(tk.Frame):
 
         # Menu Bar
         menu_bar = tk.Menu(root)
-        # file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu = tk.Menu(menu_bar, tearoff=0)
         transform_menu = tk.Menu(menu_bar, tearoff=0)
         noise_menu = tk.Menu(menu_bar, tearoff=0)
@@ -68,7 +64,7 @@ class ImageEditor(tk.Frame):
         # File Menu
         file_menu.add_command(label='Load', command=self.load_image)
         file_menu.add_command(label='Edit')
-        file_menu.add_command(label='Save')
+        file_menu.add_command(label='Save', command=self.save_image)
         file_menu.add_separator()
         file_menu.add_command(label='Save selection')
         file_menu.add_command(label='Histogram', command=self.histogram)
@@ -113,10 +109,23 @@ class ImageEditor(tk.Frame):
     # File Menu Functions
 
     def load_image(self):
-        (width, height) = self.size
+        img_path = tk.filedialog.askopenfilename(initialdir='../resources/test', title='Select Image')
+        # TODO: Read this from a file or a static map
+        # size = (290, 207)   # Size of BARCO.RAW
+        size = (256, 256)   # Size of BARCO.RAW
+        (width, height) = size
         # IMPORTANT: Notice we exchange (w,h) to (h,w) to load the image correctly
-        img_data = Util.load_raw(self.path, (height, width))
+        # TODO: Change this for a generic load method that checks on the img_path extension
+        img_data = Util.load_raw(img_path, (height, width))
         self.create_new_image(img_data)
+
+    def save_image(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        img_path = tk.filedialog.asksaveasfilename(initialdir='../resources/test', title='Save Image')
+        linear_image = Util.linear_transform(image)
+        # TODO: Change this for a generic save method that checks on the img_path extension
+        Util.save_raw(linear_image, img_path)
 
     def create_new_image(self, img_data):
         linear_img = Util.linear_transform(img_data)
@@ -139,7 +148,6 @@ class ImageEditor(tk.Frame):
         self.image_number += 1
         canvas = tk.Canvas(new_window, width=width, height=height, borderwidth=0, highlightthickness=0)
         canvas.grid(row=0, column=0)
-        # canvas.create_image(-.5, -.5, image=tk_img, anchor=tk.NW)
         canvas.create_image(0, 0, image=tk_img, anchor=tk.NW)
         canvas.my_image = tk_img # Used only to prevent image being destroy by garbage collector
         self.open_images[new_window.title()] = img_data
