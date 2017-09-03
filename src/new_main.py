@@ -297,7 +297,7 @@ class ImageEditor(tk.Frame):
     def p_median_filter(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.sliding_window_median(image, self.p_median_filter_mask, True)
+        transformed_img = FilterProvider.median_filter(image, weighted=True)
         self.create_new_image(transformed_img)
 
     def normal_filter(self):

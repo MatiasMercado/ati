@@ -2,7 +2,9 @@ import numpy as np
 
 from src.input.util import Util
 
-
+WEIGHTED_MEDIAN_MASK = np.matrix([[1, 2, 1],
+                                  [2, 4, 2],
+                                  [1, 2, 1]])
 class FilterProvider:
     @staticmethod
     def blur(image, size):
@@ -32,7 +34,7 @@ class FilterProvider:
         return FilterProvider.__sliding_window(image, mask)
 
     @staticmethod
-    def median_filter(image, mask, weighted=False, border_policy=0):
+    def median_filter(image, mask=WEIGHTED_MEDIAN_MASK, weighted=False, border_policy=0):
         ans = np.zeros(image.shape)
         (image_width, image_height) = image.shape[0], image.shape[1]
         for x in range(image_width):

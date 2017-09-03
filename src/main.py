@@ -170,7 +170,7 @@ class Root(FloatLayout):
 
     def load(self, *args):
         # self.source = '../resources/lena.ascii.pbm'
-        self.source = '../resources/circle_with_comino'
+        self.source = '../resources/LENA.RAW'
         # self.source = '../resources/color.pbm'
         # self.source = '../resources/selected_img_1'
         (self.img, self.is_color) = Util.load_raw(self.source, (100, 100)), True

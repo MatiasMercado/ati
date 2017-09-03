@@ -4,10 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from src.input.distance_util import DistanceUtil
 
+KNOWN_SIZES = {'LENA.RAW': (256, 256)}
+
 
 class Util:
     @staticmethod
-    def load_raw(path, size):
+    def load_raw(path):
+        name = path.split('/')
+        name = name[name.length - 1]
+        print(name)
+        size = KNOWN_SIZES[name]
         image = np.fromfile(path, dtype='B').reshape(size[0], size[1])
         aux = np.zeros((image.shape[0], image.shape[1], 3))
         for i in range(image.shape[0]):
@@ -20,6 +26,8 @@ class Util:
     @staticmethod
     def load_image(path):
         image = cv2.imread(path)
+        if image is None:
+            return Util.load_raw(path)
         (width, height) = (image.shape[0], image.shape[1])
 
         # Change bgr to rgb color format
@@ -171,7 +179,6 @@ class Util:
     # ONLY FOR 2D MATRIX
     @staticmethod
     def contrast_increase(image, s1, s2):
-        ans = np.zeros(image.shape)
         sigma = np.std(image.ravel())
         mean = image.mean()
         r1 = mean - sigma
@@ -180,23 +187,20 @@ class Util:
             return image
         m1 = (s1 / r1)
         b1 = 0
-        f1 = lambda x: m1 * x + b1
         m2 = ((s2 - s1) / (r2 - r1))
         b2 = s1 - m2 * r1
-        f2 = lambda x: m2 * x + b2
         m3 = (255 - s2) / (255 - r2)
         b3 = s2 - m3 * r2
-        f3 = lambda x: m3 * x + b3
 
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                if 0 <= image[i][j] <= r1:
-                    ans[i][j] = f1(image[i][j])
-                elif r1 < image[i][j] <= r2:
-                    ans[i][j] = f2(image[i][j])
-                else:
-                    ans[i][j] = f3(image[i][j])
-        return ans
+        def f(val):
+            if 0 <= val <= r1:
+                return m1 * val + b1
+            elif val <= r2:
+                return m2 * val + b2
+            else:
+                return m3 * val + b3
+
+        return Util.apply_to_matrix(image, f)
 
     @staticmethod
     def standard_deviation(matrix):
@@ -212,7 +216,7 @@ class Util:
     @staticmethod
     def gamma_power(image, gamma):
         ans = np.zeros(image.shape)
-        c = pow(255, 1 - gamma)
+        c = np.power(255, 1 - gamma)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
@@ -264,13 +268,13 @@ class Util:
         return 0
 
     @staticmethod
-    def add_comino_and_sugar_noise(image, probs=(0.25,0.25)):
+    def add_comino_and_sugar_noise(image, probs=(0.25, 0.25)):
         ret = Util.apply_to_matrix(image, lambda p: Util.single_comino_and_sugar(p, probs))
         return ret
 
     @staticmethod
     def apply_to_matrix(matrix, func, independent_layer=False, two_dim=False):
-        negative = np.copy(matrix)
+        negative = np.copy(matrix).astype(float)
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
                 if two_dim:
@@ -286,7 +290,7 @@ class Util:
 
     @staticmethod
     def apply_to_matrix_with_position(matrix, func, independent_layer=False, two_dim=False):
-        negative = np.copy(matrix)
+        negative = np.copy(matrix).astype(float)
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
                 if two_dim:
@@ -302,7 +306,8 @@ class Util:
 
     @staticmethod
     def element_wise_operation(matrix1, matrix2, func, independent_layer=False):
-        ans = np.zeros(matrix1.shape)
+        ans = np.zeros(matrix1.shape).astype(float)
+        print('start')
         for i in range(matrix1.shape[0]):
             for j in range(matrix1.shape[1]):
                 if independent_layer:
