@@ -32,6 +32,9 @@ class ImageEditor(tk.Frame):
         # Binary
         self.binary_threshold = 100
 
+        # Scalar Product
+        self.scalar = 1.2
+
     def create_menu(self):
         root = self.master
 
@@ -63,6 +66,13 @@ class ImageEditor(tk.Frame):
         transform_menu.add_command(label='Binary', command=self.to_binary)
         transform_menu.add_command(label='Equalize', command=self.equalize)
         menu_bar.add_cascade(label='Transform', menu=transform_menu)
+
+        # Operations Menu
+        operations_menu.add_command(label='Add', command=self.add)
+        operations_menu.add_command(label='Difference', command=self.difference)
+        operations_menu.add_command(label='Product', command=self.multiply)
+        operations_menu.add_command(label='Scalar Product', command=self.scalar_product)
+        menu_bar.add_cascade(label='Operations', menu=operations_menu)
 
         # Noise Menu
         noise_menu.add_command(label='Normal')
@@ -120,11 +130,7 @@ class ImageEditor(tk.Frame):
     def remove_open_image(self, event):
         self.open_images.pop(event.widget.winfo_toplevel().title(), None)
 
-    def negative(self):
-        self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = Util.negative(image)
-        self.create_new_image(transformed_img)
+    # Transform Functions
 
     def negative(self):
         self.wait_variable(self.active_window)
@@ -168,6 +174,38 @@ class ImageEditor(tk.Frame):
         transformed_img = Util.to_binary(image, self.binary_threshold)
         self.create_new_image(transformed_img)
 
+    # Operations Functions
+
+    def add(self):
+        self.wait_variable(self.active_window)
+        image1 = self.open_images[self.active_window.get()]
+        self.wait_variable(self.active_window)
+        image2 = self.open_images[self.active_window.get()]
+        transformed_img = Util.sum(image1, image2)
+        self.create_new_image(transformed_img)
+
+    def difference(self):
+        self.wait_variable(self.active_window)
+        image1 = self.open_images[self.active_window.get()]
+        self.wait_variable(self.active_window)
+        image2 = self.open_images[self.active_window.get()]
+        transformed_img = Util.difference(image1, image2)
+        self.create_new_image(transformed_img)
+
+    def multiply(self):
+        self.wait_variable(self.active_window)
+        image1 = self.open_images[self.active_window.get()]
+        self.wait_variable(self.active_window)
+        image2 = self.open_images[self.active_window.get()]
+        transformed_img = Util.multiply(image1, image2)
+        self.create_new_image(transformed_img)
+
+    def scalar_product(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        transformed_img = Util.scalar_prod(image, self.scalar)
+        self.create_new_image(transformed_img)
+
     def merge_rgb(self, r, g, b):
         ans = np.zeros((r.shape[0], r.shape[1], 3))
         for i in range(r.shape[0]):
@@ -193,6 +231,6 @@ class ImageEditor(tk.Frame):
 if __name__ == '__main__':
     app = ImageEditor()
     app.master.title('Image Editor')
-    app.master.geometry('250x250')
+    app.master.geometry('350x250')
     app.mainloop()
 

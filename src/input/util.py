@@ -128,6 +128,9 @@ class Util:
         ans = np.zeros(size)
         min_val = np.min(image)
         max_val = np.max(image)
+        if min_val == max_val:
+                print('[WARNING] In linear_transform: min_val equals max_val')
+                return image
         for x in range(width):
             for y in range(height):
                 for z in range(3):
@@ -299,19 +302,17 @@ class Util:
 
     @staticmethod
     def element_wise_operation(matrix1, matrix2, func, independent_layer=False):
-        negative = np.copy(matrix1)
-        print('start')
+        ans = np.zeros(matrix1.shape)
         for i in range(matrix1.shape[0]):
             for j in range(matrix1.shape[1]):
                 if independent_layer:
                     for k in range(matrix1.shape[2]):
-                        negative[i][j][k] = func(matrix1[i][j][k], matrix2[i][j][k])
+                        ans[i][j][k] = func(matrix1[i][j][k], matrix2[i][j][k])
                 else:
                     aux = func(matrix1[i][j][0], matrix2[i][j][0])
                     for k in range(matrix1.shape[2]):
-                        negative[i][j][k] = aux
-        print('max', np.max(negative))
-        return negative
+                        ans[i][j][k] = aux
+        return ans
 
     @staticmethod
     def add_noise_rayleigh(image, scale=1):
