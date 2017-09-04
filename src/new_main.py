@@ -226,13 +226,7 @@ class ImageEditor(tk.Frame):
     # File Menu Functions
     def load_image(self):
         img_path = tk.filedialog.askopenfilename(initialdir='../resources/test', title='Select Image')
-        # TODO: Read this from a file or a static map
-        # size = (290, 207)   # Size of BARCO.RAW
-        size = (256, 256)   # Size of BARCO.RAW
-        (width, height) = size
-        # IMPORTANT: Notice we exchange (w,h) to (h,w) to load the image correctly
-        # TODO: Change this for a generic load method that checks on the img_path extension
-        img_data = Util.load_raw(img_path, (height, width))
+        img_data = Util.load_image(img_path)
         self.create_new_image(img_data)
 
     def save_image(self):
@@ -417,7 +411,7 @@ class ImageEditor(tk.Frame):
     def p_median_filter(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.sliding_window_median(image, True)
+        transformed_img = FilterProvider.median_filter(image, weighted=True)
         self.create_new_image(transformed_img)
 
     def normal_filter(self):
