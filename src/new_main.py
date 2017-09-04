@@ -13,42 +13,27 @@ from matplotlib import pyplot as plt
 class ImageEditor(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
+
+        # Make the root window and the main frame responsive to resize
         self.grid(sticky=tk.N + tk.S + tk.E + tk.W)
-        self.image_number = 1
-        self.active_window = tk.StringVar()
+        top = self.winfo_toplevel()
+        top.rowconfigure(0, weight=1)
+        top.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        # Create Widgets
+        self.init_default_settings()
+        self.settings = self.create_settings()
         self.create_menu()
+
+        # State Variables
+        self.active_window = tk.StringVar()
+        self.image_number = 1
         self.open_images = {}
 
-        # Parameters
-
-        # Contrast
-        self.s1 = 70
-        self.s2 = 150
-
-        # Gamma
-        self.gamma = 0.5
-
-        # Binary
-        self.binary_threshold = 10
-
-        # Scalar Product
-        self.scalar = 1.2
-
-        # Noise
-        self.normal_mu = 0
-        self.normal_sigma = 1
-        self.normal_prob = 0.5
-        self.rayleigh_scale = 1
-        self.exp_scale = 1
-        self.exp_prob = 0.5
-        self.salt_pepper_prob = (0.25, 0.25)
-
-        # Filters
-        self.mean_filter_size = (3, 3)
-        self.median_filter_mask = np.matrix([[1, 3, 1], [3, 5, 3], [1, 3, 1]])
-        self.p_median_filter_mask = np.matrix([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
-        self.normal_filter_size = (3, 3)
-        self.normal_filter_sigma = 0.5
+        # Display Settings
+        # self.show_settings()
 
     def create_menu(self):
         root = self.master
@@ -89,7 +74,7 @@ class ImageEditor(tk.Frame):
         menu_bar.add_cascade(label='Operations', menu=operations_menu)
 
         # Noise Menu
-        noise_menu.add_command(label='Normal', command=self.normal_noise)
+        noise_menu.add_command(label='Gauss', command=self.normal_noise)
         noise_menu.add_command(label='Rayleigh', command=self.rayleigh_noise)
         noise_menu.add_command(label='Exp', command=self.exp_noise)
         noise_menu.add_command(label='Salt-pepper', command=self.salt_pepper_noise)
@@ -99,15 +84,146 @@ class ImageEditor(tk.Frame):
         filter_menu.add_command(label='Mean', command=self.mean_filter)
         filter_menu.add_command(label='Median', command=self.median_filter)
         filter_menu.add_command(label='P. Median', command=self.p_median_filter)
-        filter_menu.add_command(label='Normal', command=self.normal_filter)
+        filter_menu.add_command(label='Gauss', command=self.normal_filter)
         filter_menu.add_command(label='Borders', command=self.borders_filter)
         menu_bar.add_cascade(label='Filter', menu=filter_menu)
+
+        # Settings
+        menu_bar.add_command(label='Settings', command=self.show_settings)
 
         # Add menu Bar to Root Window
         root.config(menu=menu_bar)
 
-    # File Menu Functions
+    def init_default_settings(self):
+        # Contrast
+        self.s1 = tk.DoubleVar()
+        self.s1.set(10)
+        self.s2 = tk.DoubleVar()
+        self.s2.set(50)
 
+        # Gamma
+        self.gamma = tk.DoubleVar()
+        self.gamma.set(0.5)
+
+        # Binary
+        self.binary_threshold = tk.DoubleVar()
+        self.binary_threshold.set(100)
+
+        # Scalar Product
+        self.scalar = tk.DoubleVar()
+        self.scalar.set(1.2)
+
+        # Noise
+        self.normal_mu = tk.DoubleVar()
+        self.normal_mu .set(0) # THIS SHOULD ALWAYS BE 0
+        self.normal_sigma = tk.DoubleVar()
+        self.normal_sigma.set(20)
+        self.normal_prob = tk.DoubleVar()
+        self.normal_prob.set(0.25)
+        self.rayleigh_scale = tk.DoubleVar()
+        self.rayleigh_scale.set(1)
+        self.exp_scale = tk.DoubleVar()
+        self.exp_scale.set(1)
+        self.exp_prob = tk.DoubleVar()
+        self.exp_prob.set(0.5)
+        self.salt_pepper_p1 = tk.DoubleVar()
+        self.salt_pepper_p1.set(0.25)
+        self.salt_pepper_p2 = tk.DoubleVar()
+        self.salt_pepper_p2.set(0.25)
+
+        # Filters
+        self.mean_filter_size = tk.StringVar()
+        self.mean_filter_size.set('3 3')
+        self.median_filter_mask = tk.StringVar()
+        self.median_filter_mask.set('[[1, 3, 1]; [3, 5, 3]; [1, 3, 1]]')
+        self.normal_filter_size = tk.StringVar()
+        self.normal_filter_size.set('3 3')
+        self.normal_filter_sigma = tk.DoubleVar()
+        self.normal_filter_sigma.set(20)
+
+    def create_settings(self):
+        settings_frame = tk.Frame(self)
+        # Title
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=0, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Settings').grid(row=0, columnspan=2)
+
+        # Contrast
+        tk.Label(settings_frame, text='Contrast').grid(row=1, column=0)
+        tk.Label(settings_frame, text='S1').grid(row=2, column=0)
+        tk.Entry(settings_frame, text=self.s1, textvariable=self.s1).grid(row=2, column=1)
+        tk.Label(settings_frame, text='S2').grid(row=3, column=0)
+        tk.Entry(settings_frame, text=self.s2, textvariable=self.s2).grid(row=3, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=4, columnspan=2, sticky=(tk.W, tk.E))
+
+        # Gamma
+        tk.Label(settings_frame, text='Gamma').grid(row=5, column=0)
+        # tk.Scale(settings_frame, variable=self.gamma, from_=0, to=3, orient=tk.HORIZONTAL).grid(row=4, column=1)
+        tk.Entry(settings_frame, text=self.gamma, textvariable=self.gamma).grid(row=5, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=6, columnspan=2, sticky=(tk.W, tk.E))
+
+        # Binary
+        tk.Label(settings_frame, text='Binary Threshold').grid(row=7, column=0)
+        tk.Entry(settings_frame, text=self.binary_threshold, textvariable=self.binary_threshold).grid(row=7, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=8, columnspan=2, sticky=(tk.W, tk.E))
+
+        # Scalar Product
+        tk.Label(settings_frame, text='Scalar Product').grid(row=9, column=0)
+        tk.Entry(settings_frame, text=self.scalar, textvariable=self.scalar).grid(row=9, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=10, columnspan=2, sticky=(tk.W, tk.E))
+
+        # Noise
+        tk.Label(settings_frame, text='Gauss Noise').grid(row=11, column=0)
+        tk.Label(settings_frame, text='Deviation').grid(row=12, column=0)
+        tk.Entry(settings_frame, text=self.normal_sigma, textvariable=self.normal_sigma).grid(row=12, column=1)
+
+        tk.Label(settings_frame, text='Probability').grid(row=13, column=0)
+        tk.Entry(settings_frame, text=self.normal_prob, textvariable=self.normal_prob).grid(row=13, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=14, columnspan=2, sticky=(tk.W, tk.E))
+
+        tk.Label(settings_frame, text='Rayleigh Scale').grid(row=15, column=0)
+        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=15, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=16, columnspan=2, sticky=(tk.W, tk.E))
+
+        tk.Label(settings_frame, text='Exp Noise').grid(row=17, column=0)
+        tk.Label(settings_frame, text='Exp Scale').grid(row=18, column=0)
+        tk.Entry(settings_frame, text=self.exp_scale, textvariable=self.exp_scale).grid(row=18, column=1)
+
+        tk.Label(settings_frame, text='Exp Probability').grid(row=19, column=0)
+        tk.Entry(settings_frame, text=self.exp_prob, textvariable=self.exp_prob).grid(row=19, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=20, columnspan=2, sticky=(tk.W, tk.E))
+
+        tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=21, column=0)
+        tk.Label(settings_frame, text='P1').grid(row=22, column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=22, column=1)
+        tk.Label(settings_frame, text='P2').grid(row=23, column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_p2, textvariable=self.salt_pepper_p2).grid(row=23, column=1)
+
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=24, columnspan=2, sticky=(tk.W, tk.E))
+
+        tk.Label(settings_frame, text='Mean Filter Size').grid(row=25, column=0)
+        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=25, column=1)
+
+        tk.Label(settings_frame, text='Median Filter Mask').grid(row=26, column=0)
+        tk.Entry(settings_frame, text=self.median_filter_mask, textvariable=self.median_filter_mask).grid(row=26, column=1)
+
+        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=27, column=0)
+        tk.Entry(settings_frame, text=self.normal_filter_size, textvariable=self.normal_filter_size).grid(row=27, column=1)
+
+        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=28, column=0)
+        tk.Entry(settings_frame, text=self.normal_filter_sigma, textvariable=self.normal_filter_sigma).grid(row=28, column=1)
+
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
+        tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
+        return settings_frame
+
+    def show_settings(self):
+        self.settings.grid()
+        # self.settings.grid(sticky=tk.N + tk.S + tk.E + tk.W)
+
+    def hide_settings(self):
+        self.settings.grid_remove()
+
+    # File Menu Functions
     def load_image(self):
         img_path = tk.filedialog.askopenfilename(initialdir='../resources/test', title='Select Image')
         # TODO: Read this from a file or a static map
@@ -178,7 +294,6 @@ class ImageEditor(tk.Frame):
         self.label.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
 
     # Transform Menu Functions
-
     def negative(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
@@ -188,9 +303,9 @@ class ImageEditor(tk.Frame):
     def contrast(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        r = Util.contrast_increase(image[:, :, 0], self.s1, self.s2)
-        g = Util.contrast_increase(image[:, :, 1], self.s1, self.s2)
-        b = Util.contrast_increase(image[:, :, 2], self.s1, self.s2)
+        r = Util.contrast_increase(image[:, :, 0], self.s1.get(), self.s2.get())
+        g = Util.contrast_increase(image[:, :, 1], self.s1.get(), self.s2.get())
+        b = Util.contrast_increase(image[:, :, 2], self.s1.get(), self.s2.get())
         transformed_img = self.__merge_rgb(r, g, b)
         self.create_new_image(transformed_img)
 
@@ -206,7 +321,7 @@ class ImageEditor(tk.Frame):
     def gamma_function(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.gamma_power(image, self.gamma)
+        transformed_img = Util.gamma_power(image, self.gamma.get())
         self.create_new_image(transformed_img)
 
     def equalize(self):
@@ -218,11 +333,10 @@ class ImageEditor(tk.Frame):
     def to_binary(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.to_binary(image, self.binary_threshold)
+        transformed_img = Util.to_binary(image, self.binary_threshold.get())
         self.create_new_image(transformed_img)
 
     # Operations Functions
-
     def add(self):
         self.wait_variable(self.active_window)
         image1 = self.open_images[self.active_window.get()]
@@ -248,62 +362,70 @@ class ImageEditor(tk.Frame):
         self.create_new_image(transformed_img)
 
     def scalar_product(self):
+        print('Scalar Product With: {}'.format(self.scalar.get()))
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.scalar_prod(image, self.scalar)
+        transformed_img = Util.scalar_prod(image, self.scalar.get())
         self.create_new_image(transformed_img)
 
     # Noise Functions
-
     def normal_noise(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_additive_noise_normal(image, self.normal_mu, self.normal_sigma,
-                                                         self.normal_prob)
+        transformed_img = Util.add_additive_noise_normal(image, self.normal_mu.get(), self.normal_sigma.get(),
+                                                         self.normal_prob.get())
         self.create_new_image(transformed_img)
 
     def rayleigh_noise(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_noise_rayleigh(image, self.rayleigh_scale)
+        transformed_img = Util.add_noise_rayleigh(image, self.rayleigh_scale.get())
         self.create_new_image(transformed_img)
 
     def exp_noise(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_noise_exponential(image, self.exp_scale, self.exp_prob)
+        transformed_img = Util.add_noise_exponential(image, self.exp_scale.get(), self.exp_prob.get())
         self.create_new_image(transformed_img)
 
     def salt_pepper_noise(self):
+        salt_pepper_prob = (self.salt_pepper_p1.get(), self.salt_pepper_p2.get())
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_comino_and_sugar_noise(image, self.salt_pepper_prob)
+        transformed_img = Util.add_comino_and_sugar_noise(image, salt_pepper_prob)
         self.create_new_image(transformed_img)
 
     # Filter Functions
-
     def mean_filter(self):
+        size = self.mean_filter_size.get().split()
+        mean_filter_size = (int(size[0]), int(size[1]))
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.blur(image, self.mean_filter_size)
+        transformed_img = FilterProvider.blur(image, mean_filter_size)
         self.create_new_image(transformed_img)
 
     def median_filter(self):
+        print(self.median_filter_mask.get())
+        median_filter_mask = np.matrix(self.median_filter_mask.get())
+        print(median_filter_mask.shape)
+        print(median_filter_mask)
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.median_filter(image, self.median_filter_mask, False)
+        transformed_img = FilterProvider.median_filter(image, median_filter_mask, False)
         self.create_new_image(transformed_img)
 
     def p_median_filter(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.sliding_window_median(image, self.p_median_filter_mask, True)
+        transformed_img = FilterProvider.sliding_window_median(image, True)
         self.create_new_image(transformed_img)
 
     def normal_filter(self):
+        size = self.normal_filter_size.get().split()
+        normal_filter_size = (int(size[0]), int(size[1]))
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.gauss_blur(image, self.normal_filter_size, self.normal_filter_sigma)
+        transformed_img = FilterProvider.gauss_blur(image, normal_filter_size, self.normal_filter_sigma.get())
         self.create_new_image(transformed_img)
 
     def borders_filter(self):
@@ -313,7 +435,6 @@ class ImageEditor(tk.Frame):
         self.create_new_image(transformed_img)
 
     # Private Functions
-
     def __merge_rgb(self, r, g, b):
         ans = np.zeros((r.shape[0], r.shape[1], 3))
         for i in range(r.shape[0]):
@@ -326,6 +447,6 @@ class ImageEditor(tk.Frame):
 if __name__ == '__main__':
     app = ImageEditor()
     app.master.title('Image Editor')
-    app.master.geometry('350x250')
+    app.master.geometry('400x500')
     app.mainloop()
 
