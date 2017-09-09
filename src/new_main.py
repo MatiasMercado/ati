@@ -119,7 +119,7 @@ class ImageEditor(tk.Frame):
         self.normal_sigma = tk.DoubleVar()
         self.normal_sigma.set(20)
         self.normal_prob = tk.DoubleVar()
-        self.normal_prob.set(0.25)
+        self.normal_prob.set(1)
         self.rayleigh_scale = tk.DoubleVar()
         self.rayleigh_scale.set(1)
         self.exp_scale = tk.DoubleVar()
@@ -227,6 +227,8 @@ class ImageEditor(tk.Frame):
     def load_image(self):
         img_path = tk.filedialog.askopenfilename(initialdir='../resources/test', title='Select Image')
         img_data = Util.load_image(img_path)
+        print(img_data)
+        print(img_data.shape)
         self.create_new_image(img_data)
 
     def save_image(self):
@@ -297,19 +299,21 @@ class ImageEditor(tk.Frame):
     def contrast(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        r = Util.contrast_increase(image[:, :, 0], self.s1.get(), self.s2.get())
-        g = Util.contrast_increase(image[:, :, 1], self.s1.get(), self.s2.get())
-        b = Util.contrast_increase(image[:, :, 2], self.s1.get(), self.s2.get())
-        transformed_img = self.__merge_rgb(r, g, b)
+        # r = Util.contrast_increase(image[:, :, 0], self.s1.get(), self.s2.get())
+        # g = Util.contrast_increase(image[:, :, 1], self.s1.get(), self.s2.get())
+        # b = Util.contrast_increase(image[:, :, 2], self.s1.get(), self.s2.get())
+        # transformed_img = self.__merge_rgb(r, g, b)
+        transformed_img = Util.contrast_increase(image, self.s1.get(), self.s2.get())
         self.create_new_image(transformed_img)
 
     def dynamic_compression(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        r = Util.dynamic_range_compression(image[:, :, 0])
-        g = Util.dynamic_range_compression(image[:, :, 1])
-        b = Util.dynamic_range_compression(image[:, :, 2])
-        transformed_img = self.__merge_rgb(r, g, b)
+        # r = Util.dynamic_range_compression(image[:, :, 0])
+        # g = Util.dynamic_range_compression(image[:, :, 1])
+        # b = Util.dynamic_range_compression(image[:, :, 2])
+        # transformed_img = self.__merge_rgb(r, g, b)
+        transformed_img = Util.dynamic_range_compression(image)
         self.create_new_image(transformed_img)
 
     def gamma_function(self):
