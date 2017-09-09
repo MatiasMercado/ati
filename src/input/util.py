@@ -270,18 +270,26 @@ class Util:
         ))
 
     @staticmethod
-    def single_comino_and_sugar(value, probs):
+    def single_comino_and_sugar(value, p0, p1):
         r = np.random.random()
-        if r > probs[0] + probs[1]:
-            return value
-        if r > probs[0]:
+        if r <= p0:
+            return 0
+        elif r >= p1:
             return 255
-        return 0
+        return value
 
     @staticmethod
-    def add_comino_and_sugar_noise(image, probs=(0.25, 0.25)):
-        ret = Util.apply_to_matrix(image, lambda p: Util.single_comino_and_sugar(p, probs))
-        return ret
+    def add_comino_and_sugar_noise(image, p0=0.1, p1=0.9):
+        # return Util.apply_to_matrix(image, lambda img: Util.single_comino_and_sugar(img, p0, p1))
+        ans = np.copy(image).astype(float)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                    ans[i][j][0] = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
+                    if ans[i][j][0] == 0 or ans[i][j][0] == 255:
+                        ans[i][j][1] = ans[i][j][0]
+                        ans[i][j][2] = ans[i][j][0]
+        return ans
+
 
     @staticmethod
     def apply_to_matrix(matrix, func, independent_layer=False, two_dim=False):
