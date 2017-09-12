@@ -17,9 +17,10 @@ class FilterProvider:
         mask = np.zeros(size)
         mask = Util.apply_to_matrix_with_position(mask, lambda val, x, y: np.exp(-(x ** 2 + y ** 2) / (sigma ** 2)) / (
             2 * np.pi * sigma ** 2), two_dim=True)
-        mask_sum = mask.sum()
-        mask = Util.apply_to_matrix(mask, lambda val: val / mask_sum, two_dim=True)
-        mask_sum = mask.sum()
+        ## WHY???
+        # mask_sum = mask.sum()
+        # mask = Util.apply_to_matrix(mask, lambda val: val / mask_sum, two_dim=True)
+        # mask_sum = mask.sum()
         return FilterProvider.__sliding_window(image, mask)
 
     @staticmethod
