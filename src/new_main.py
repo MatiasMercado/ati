@@ -127,15 +127,13 @@ class ImageEditor(tk.Frame):
         self.exp_prob = tk.DoubleVar()
         self.exp_prob.set(1)
         self.salt_pepper_p0 = tk.DoubleVar()
-        self.salt_pepper_p0.set(0.1)
+        self.salt_pepper_p0.set(0.05)
         self.salt_pepper_p1 = tk.DoubleVar()
-        self.salt_pepper_p1.set(0.9)
+        self.salt_pepper_p1.set(0.95)
 
         # Filters
         self.mean_filter_size = tk.StringVar()
         self.mean_filter_size.set('3 3')
-        self.median_filter_mask = tk.StringVar()
-        self.median_filter_mask.set('[[1, 3, 1]; [3, 5, 3]; [1, 3, 1]]')
         self.gauss_filter_size = tk.StringVar()
         self.gauss_filter_size.set('3 3')
         self.gauss_filter_sigma = tk.DoubleVar()
@@ -203,14 +201,11 @@ class ImageEditor(tk.Frame):
         tk.Label(settings_frame, text='Mean Filter Size').grid(row=25, column=0)
         tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=25, column=1)
 
-        tk.Label(settings_frame, text='Median Filter Mask').grid(row=26, column=0)
-        tk.Entry(settings_frame, text=self.median_filter_mask, textvariable=self.median_filter_mask).grid(row=26, column=1)
+        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=26, column=0)
+        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=26, column=1)
 
-        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=27, column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=27, column=1)
-
-        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=28, column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=28, column=1)
+        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=27, column=0)
+        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=27, column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -402,10 +397,9 @@ class ImageEditor(tk.Frame):
         self.create_new_image(transformed_img)
 
     def median_filter(self):
-        median_filter_mask = np.matrix(self.median_filter_mask.get())
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.median_filter(image, median_filter_mask, False)
+        transformed_img = FilterProvider.median_filter(image)
         self.create_new_image(transformed_img)
 
     def w_median_filter(self):
