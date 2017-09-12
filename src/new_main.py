@@ -1,13 +1,16 @@
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
+
+from src.input.util import Util
+from src.input.filter_provider import FilterProvider
+from src.input.provider import Provider
+from PIL import ImageTk
 import tkinter as tk
 import tkinter.ttk as ttk
 import PIL
-from PIL import ImageTk
 import numpy as np
 
-from input.filter_provider import FilterProvider
-from input.provider import Provider
-from input.util import Util
-from matplotlib import pyplot as plt
 
 
 class ImageEditor(tk.Frame):
@@ -115,7 +118,7 @@ class ImageEditor(tk.Frame):
 
         # Noise
         self.normal_mu = tk.DoubleVar()
-        self.normal_mu .set(0) # THIS SHOULD ALWAYS BE 0
+        self.normal_mu.set(0)  # THIS SHOULD ALWAYS BE 0
         self.normal_sigma = tk.DoubleVar()
         self.normal_sigma.set(20)
         self.normal_prob = tk.DoubleVar()
@@ -222,8 +225,6 @@ class ImageEditor(tk.Frame):
     def load_image(self):
         img_path = tk.filedialog.askopenfilename(initialdir='../resources/test', title='Select Image')
         img_data = Util.load_image(img_path)
-        print(img_data)
-        print(img_data.shape)
         self.create_new_image(img_data)
 
     def save_image(self):
@@ -256,7 +257,7 @@ class ImageEditor(tk.Frame):
         canvas = tk.Canvas(new_window, width=width, height=height, borderwidth=0, highlightthickness=0)
         canvas.grid(row=0, column=0)
         canvas.create_image(0, 0, image=tk_img, anchor=tk.NW)
-        canvas.my_image = tk_img # Used only to prevent image being destroy by garbage collector
+        canvas.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
         self.open_images[new_window.title()] = img_data
 
     def set_active_window(self, event):
@@ -355,7 +356,6 @@ class ImageEditor(tk.Frame):
         self.create_new_image(transformed_img)
 
     def scalar_product(self):
-        print('Scalar Product With: {}'.format(self.scalar.get()))
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
         transformed_img = Util.scalar_prod(image, self.scalar.get())
@@ -432,9 +432,9 @@ class ImageEditor(tk.Frame):
                 ans[i][j][2] = b[i][j]
         return ans
 
+
 if __name__ == '__main__':
     app = ImageEditor()
     app.master.title('Image Editor')
     app.master.geometry('400x500')
     app.mainloop()
-

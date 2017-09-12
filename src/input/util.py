@@ -41,8 +41,8 @@ class Util:
             if is_color:
                 break
         if is_color:
-        #     return img.astype('float'), True
-        # return img.astype('float'), False
+            #     return img.astype('float'), True
+            # return img.astype('float'), False
             return img.astype('float')
         return img.astype('float')
 
@@ -75,11 +75,8 @@ class Util:
 
     @staticmethod
     def save(image, name):
-        # print(np.min(image), np.max(image))
         image = Util.linear_transform(image)
-        # print(np.min(image), np.max(image))
         image = image.astype('short')
-        # print(np.min(image), np.max(image))
         img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
 
@@ -140,8 +137,8 @@ class Util:
         min_val = np.min(image)
         max_val = np.max(image)
         if min_val == max_val:
-                print('[WARNING] In linear_transform: min_val equals max_val')
-                return image
+            print('[WARNING] In linear_transform: min_val equals max_val')
+            return image
         for x in range(width):
             for y in range(height):
                 for z in range(3):
@@ -172,15 +169,15 @@ class Util:
     @staticmethod
     def dynamic_range_compression(image):
         R = image.max()
-        print('R2: {}'.format(image.ravel().max()))
-        print('R1: {}'.format(R))
         c = 255 / np.math.log(1 + R)
+
         # for i in range(image.shape[0]):
         #     for j in range(image.shape[1]):
         #         ans[i][j] = c * np.math.log(1 + image[i][j])
         # return ans
         def f(val):
             return c * np.math.log(1 + val)
+
         return Util.apply_to_matrix(image, f, True)
 
     # ONLY FOR 2D MATRIX
@@ -192,14 +189,15 @@ class Util:
         r2 = mean + sigma
         if r1 <= 0 or r2 >= 255:
             return image
-        print('mean: {} - sigma: {} - r1: {} - r2: {}'.format(mean, sigma, r1, r2))
         m1 = (s1 / r1)
         b1 = 0
         m2 = ((s2 - s1) / (r2 - r1))
         b2 = s1 - m2 * r1
         m3 = (255 - s2) / (255 - r2)
         b3 = s2 - m3 * r2
-
+        # Don't delete this comment, it gives info. about the image
+        print('Contrast\nMean: {}, Sigma: {}\nr1: {}, r2: {}\nm1: {}, m2: {}, m3: {}'
+              .format(mean, sigma, r1, r2, m1, m2, m3))
         def f(val):
             if 0 <= val <= r1:
                 return m1 * val + b1
@@ -224,6 +222,7 @@ class Util:
     @staticmethod
     def gamma_power(image, gamma):
         c = np.power(255, 1 - gamma)
+
         # for i in range(image.shape[0]):
         #     for j in range(image.shape[1]):
         #         for k in range(image.shape[2]):
@@ -232,6 +231,7 @@ class Util:
 
         def f(val):
             return c * np.power(val, gamma)
+
         return Util.apply_to_matrix(image, f, True)
 
         # @staticmethod
@@ -257,9 +257,7 @@ class Util:
             np.random.exponential(scale, image.shape),
             Util.binary_matrix(image.shape, prob)
         )
-        print(aux.shape)
         aux = Util.multiply(image, aux)
-        print(aux.shape)
         return aux
 
     @staticmethod
@@ -284,12 +282,11 @@ class Util:
         ans = np.copy(image).astype(float)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                    ans[i][j][0] = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
-                    if ans[i][j][0] == 0 or ans[i][j][0] == 255:
-                        ans[i][j][1] = ans[i][j][0]
-                        ans[i][j][2] = ans[i][j][0]
+                ans[i][j][0] = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
+                if ans[i][j][0] == 0 or ans[i][j][0] == 255:
+                    ans[i][j][1] = ans[i][j][0]
+                    ans[i][j][2] = ans[i][j][0]
         return ans
-
 
     @staticmethod
     def apply_to_matrix(matrix, func, independent_layer=False, two_dim=False):
@@ -326,7 +323,6 @@ class Util:
     @staticmethod
     def element_wise_operation(matrix1, matrix2, func, independent_layer=False):
         ans = np.zeros(matrix1.shape).astype(float)
-        print('start')
         for i in range(matrix1.shape[0]):
             for j in range(matrix1.shape[1]):
                 if independent_layer:

@@ -86,7 +86,6 @@ class Provider:
         h = np.zeros(256)
         for p in aux.flatten():
             h[p] = h[p] + 1
-        print(h)
         return h
 
     @staticmethod
@@ -102,29 +101,6 @@ class Provider:
                 my_h_acu[i] = 255
             else:
                 my_h_acu[i] = np.round((my_h_acu[i] - min_h) * 255 / (1 - min_h))
-        ans = Util.apply_to_matrix(image, lambda p: my_h_acu[p])
+        ans = Util.apply_to_matrix(image, lambda p: my_h_acu[p.astype(int)])
         return ans
 
-
-# img = Provider.draw_circle((100,100), 28)
-# Util.save_raw(img, '../../resources/circle')
-# myimg = Util.load_raw('LENA.RAW', (256, 256))
-# # Util.save(myimg, 'original')
-# # myimg = Util.add_additive_noise_exponential(myimg, scale=100, prob=0.9)
-# # myimg = FilterProvider.gauss_blur(myimg, (7, 7), 0.1).astype('B')
-# # myimg = FilterProvider.pasa_altos(myimg).astype('B')
-# # myimg = Util.to_binary(myimg, 30).astype('B')
-# # np.savetxt('../../resources/blur.raw', myimg[:, :, 0])
-#
-# # Util.save(myimg, 'exp')
-# # vec = np.random.exponential(2, 1000)
-# # vec = np.random.normal(0, 3, 1000)
-# # hist = np.histogram(vec, bins='auto')
-# # plt.show()
-# # print(hist)
-#
-# plt.hist(myimg.flatten(), bins=range(256))
-# plt.show()
-# # vec = np.random.binomial(1, 0.5, (5, 5))
-# # print(vec)
-# # Provider.save_raw(myimg)
