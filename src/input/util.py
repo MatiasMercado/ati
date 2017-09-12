@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from src.input.distance_util import DistanceUtil
 
 # For each image store (HEIGHT, WIDTH)
-KNOWN_SIZES = {'LENA.RAW': (256, 256), 'BARCO.RAW': (207, 290)}
+KNOWN_SIZES = {'GIRL.RAW': (164, 389), 'BARCO.RAW': (207, 290), 'LENA.RAW': (256, 256), 'LENAX.RAW': (256, 256), 'GIRL2.RAW': (256, 256), 'FRACTAL.RAW': (200, 200)}
 
 
 class Util:

@@ -83,8 +83,8 @@ class ImageEditor(tk.Frame):
         # Filter Menu
         filter_menu.add_command(label='Mean', command=self.mean_filter)
         filter_menu.add_command(label='Median', command=self.median_filter)
-        filter_menu.add_command(label='P. Median', command=self.p_median_filter)
-        filter_menu.add_command(label='Gauss', command=self.normal_filter)
+        filter_menu.add_command(label='W. Median', command=self.w_median_filter)
+        filter_menu.add_command(label='Gauss', command=self.gauss_filter)
         filter_menu.add_command(label='Borders', command=self.borders_filter)
         menu_bar.add_cascade(label='Filter', menu=filter_menu)
 
@@ -136,10 +136,10 @@ class ImageEditor(tk.Frame):
         self.mean_filter_size.set('3 3')
         self.median_filter_mask = tk.StringVar()
         self.median_filter_mask.set('[[1, 3, 1]; [3, 5, 3]; [1, 3, 1]]')
-        self.normal_filter_size = tk.StringVar()
-        self.normal_filter_size.set('3 3')
-        self.normal_filter_sigma = tk.DoubleVar()
-        self.normal_filter_sigma.set(20)
+        self.gauss_filter_size = tk.StringVar()
+        self.gauss_filter_size.set('3 3')
+        self.gauss_filter_sigma = tk.DoubleVar()
+        self.gauss_filter_sigma.set(20)
 
     def create_settings(self):
         settings_frame = tk.Frame(self)
@@ -207,10 +207,10 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.median_filter_mask, textvariable=self.median_filter_mask).grid(row=26, column=1)
 
         tk.Label(settings_frame, text='Gauss Filter Size').grid(row=27, column=0)
-        tk.Entry(settings_frame, text=self.normal_filter_size, textvariable=self.normal_filter_size).grid(row=27, column=1)
+        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=27, column=1)
 
         tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=28, column=0)
-        tk.Entry(settings_frame, text=self.normal_filter_sigma, textvariable=self.normal_filter_sigma).grid(row=28, column=1)
+        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=28, column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -402,27 +402,24 @@ class ImageEditor(tk.Frame):
         self.create_new_image(transformed_img)
 
     def median_filter(self):
-        print(self.median_filter_mask.get())
         median_filter_mask = np.matrix(self.median_filter_mask.get())
-        print(median_filter_mask.shape)
-        print(median_filter_mask)
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.median_filter(image, median_filter_mask, False)
         self.create_new_image(transformed_img)
 
-    def p_median_filter(self):
+    def w_median_filter(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.median_filter(image, weighted=True)
         self.create_new_image(transformed_img)
 
-    def normal_filter(self):
-        size = self.normal_filter_size.get().split()
-        normal_filter_size = (int(size[0]), int(size[1]))
+    def gauss_filter(self):
+        size = self.gauss_filter_size.get().split()
+        gauss_filter_size = (int(size[0]), int(size[1]))
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.gauss_blur(image, normal_filter_size, self.normal_filter_sigma.get())
+        transformed_img = FilterProvider.gauss_blur(image, gauss_filter_size, self.gauss_filter_sigma.get())
         self.create_new_image(transformed_img)
 
     def borders_filter(self):
