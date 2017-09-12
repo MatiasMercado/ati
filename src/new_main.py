@@ -122,17 +122,17 @@ class ImageEditor(tk.Frame):
         self.normal_sigma = tk.DoubleVar()
         self.normal_sigma.set(20)
         self.normal_prob = tk.DoubleVar()
-        self.normal_prob.set(0.25)
+        self.normal_prob.set(1)
         self.rayleigh_scale = tk.DoubleVar()
-        self.rayleigh_scale.set(1)
+        self.rayleigh_scale.set(0.25)
         self.exp_scale = tk.DoubleVar()
-        self.exp_scale.set(1)
+        self.exp_scale.set(0.25)
         self.exp_prob = tk.DoubleVar()
-        self.exp_prob.set(0.5)
+        self.exp_prob.set(1)
+        self.salt_pepper_p0 = tk.DoubleVar()
+        self.salt_pepper_p0.set(0.1)
         self.salt_pepper_p1 = tk.DoubleVar()
-        self.salt_pepper_p1.set(0.1)
-        self.salt_pepper_p2 = tk.DoubleVar()
-        self.salt_pepper_p2.set(0.1)
+        self.salt_pepper_p1.set(0.9)
 
         # Filters
         self.mean_filter_size = tk.StringVar()
@@ -196,10 +196,10 @@ class ImageEditor(tk.Frame):
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=20, columnspan=2, sticky=(tk.W, tk.E))
 
         tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=21, column=0)
-        tk.Label(settings_frame, text='P1').grid(row=22, column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=22, column=1)
-        tk.Label(settings_frame, text='P2').grid(row=23, column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p2, textvariable=self.salt_pepper_p2).grid(row=23, column=1)
+        tk.Label(settings_frame, text='P0').grid(row=22, column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=22, column=1)
+        tk.Label(settings_frame, text='P1').grid(row=23, column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=23, column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=24, columnspan=2, sticky=(tk.W, tk.E))
 
@@ -233,6 +233,8 @@ class ImageEditor(tk.Frame):
     def load_image(self):
         img_path = tk.filedialog.askopenfilename(initialdir='../resources/test', title='Select Image')
         img_data = Util.load_image(img_path)
+        print(img_data)
+        print(img_data.shape)
         self.create_new_image(img_data)
 
     def save_image(self):
@@ -303,19 +305,21 @@ class ImageEditor(tk.Frame):
     def contrast(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        r = Util.contrast_increase(image[:, :, 0], self.s1.get(), self.s2.get())
-        g = Util.contrast_increase(image[:, :, 1], self.s1.get(), self.s2.get())
-        b = Util.contrast_increase(image[:, :, 2], self.s1.get(), self.s2.get())
-        transformed_img = self.__merge_rgb(r, g, b)
+        # r = Util.contrast_increase(image[:, :, 0], self.s1.get(), self.s2.get())
+        # g = Util.contrast_increase(image[:, :, 1], self.s1.get(), self.s2.get())
+        # b = Util.contrast_increase(image[:, :, 2], self.s1.get(), self.s2.get())
+        # transformed_img = self.__merge_rgb(r, g, b)
+        transformed_img = Util.contrast_increase(image, self.s1.get(), self.s2.get())
         self.create_new_image(transformed_img)
 
     def dynamic_compression(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        r = Util.dynamic_range_compression(image[:, :, 0])
-        g = Util.dynamic_range_compression(image[:, :, 1])
-        b = Util.dynamic_range_compression(image[:, :, 2])
-        transformed_img = self.__merge_rgb(r, g, b)
+        # r = Util.dynamic_range_compression(image[:, :, 0])
+        # g = Util.dynamic_range_compression(image[:, :, 1])
+        # b = Util.dynamic_range_compression(image[:, :, 2])
+        # transformed_img = self.__merge_rgb(r, g, b)
+        transformed_img = Util.dynamic_range_compression(image)
         self.create_new_image(transformed_img)
 
     def gamma_function(self):
@@ -389,10 +393,9 @@ class ImageEditor(tk.Frame):
         self.create_new_image(transformed_img)
 
     def salt_pepper_noise(self):
-        salt_pepper_prob = (self.salt_pepper_p1.get(), self.salt_pepper_p2.get())
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_comino_and_sugar_noise(image, salt_pepper_prob)
+        transformed_img = Util.add_comino_and_sugar_noise(image, self.salt_pepper_p0.get(), self.salt_pepper_p1.get())
         self.create_new_image(transformed_img)
 
     # Filter Functions

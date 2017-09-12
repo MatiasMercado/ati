@@ -41,8 +41,10 @@ class Util:
             if is_color:
                 break
         if is_color:
-            return img.astype('float'), True
-        return img.astype('float'), False
+            #     return img.astype('float'), True
+            # return img.astype('float'), False
+            return img.astype('float')
+        return img.astype('float')
 
     # deprecated
     @staticmethod
@@ -138,8 +140,8 @@ class Util:
         min_val = np.min(image)
         max_val = np.max(image)
         if min_val == max_val:
-                print('[WARNING] In linear_transform: min_val equals max_val')
-                return image
+            print('[WARNING] In linear_transform: min_val equals max_val')
+            return image
         for x in range(width):
             for y in range(height):
                 for z in range(3):
@@ -169,13 +171,19 @@ class Util:
     # ONLY FOR 2D MATRIX
     @staticmethod
     def dynamic_range_compression(image):
-        ans = np.zeros(image.shape)
         R = image.max()
+        print('R2: {}'.format(image.ravel().max()))
+        print('R1: {}'.format(R))
         c = 255 / np.math.log(1 + R)
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                ans[i][j] = c * np.math.log(1 + image[i][j])
-        return ans
+
+        # for i in range(image.shape[0]):
+        #     for j in range(image.shape[1]):
+        #         ans[i][j] = c * np.math.log(1 + image[i][j])
+        # return ans
+        def f(val):
+            return c * np.math.log(1 + val)
+
+        return Util.apply_to_matrix(image, f, True)
 
     # ONLY FOR 2D MATRIX
     @staticmethod
@@ -186,6 +194,7 @@ class Util:
         r2 = mean + sigma
         if r1 <= 0 or r2 >= 255:
             return image
+        print('mean: {} - sigma: {} - r1: {} - r2: {}'.format(mean, sigma, r1, r2))
         m1 = (s1 / r1)
         b1 = 0
         m2 = ((s2 - s1) / (r2 - r1))
@@ -201,7 +210,7 @@ class Util:
             else:
                 return m3 * val + b3
 
-        return Util.apply_to_matrix(image, f)
+        return Util.apply_to_matrix(image, f, True)
 
     @staticmethod
     def standard_deviation(matrix):
@@ -216,13 +225,18 @@ class Util:
 
     @staticmethod
     def gamma_power(image, gamma):
-        ans = np.zeros(image.shape)
         c = np.power(255, 1 - gamma)
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                for k in range(image.shape[2]):
-                    ans[i][j][k] = c * pow(image[i][j][k], gamma)
-        return ans
+
+        # for i in range(image.shape[0]):
+        #     for j in range(image.shape[1]):
+        #         for k in range(image.shape[2]):
+        #             ans[i][j][k] = c * pow(image[i][j][k], gamma)
+        # return ans
+
+        def f(val):
+            return c * np.power(val, gamma)
+
+        return Util.apply_to_matrix(image, f, True)
 
         # @staticmethod
         # def gaussian_distr(x1, x2):
@@ -260,16 +274,25 @@ class Util:
         ))
 
     @staticmethod
-    def add_comino_and_sugar_noise(image, probs=(0.1, 0.1)):
-        def single_comino_and_sugar(value, probs):
-            r = np.random.random()
-            if r > probs[0] + probs[1]:
-                return value
-            if r > probs[0]:
-                return 255
+    def single_comino_and_sugar(value, p0, p1):
+        r = np.random.random()
+        if r <= p0:
             return 0
-        ret = Util.apply_to_matrix(image, lambda p: single_comino_and_sugar(p, probs))
-        return ret
+        elif r >= p1:
+            return 255
+        return value
+
+    @staticmethod
+    def add_comino_and_sugar_noise(image, p0=0.1, p1=0.9):
+        # return Util.apply_to_matrix(image, lambda img: Util.single_comino_and_sugar(img, p0, p1))
+        ans = np.copy(image).astype(float)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                ans[i][j][0] = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
+                if ans[i][j][0] == 0 or ans[i][j][0] == 255:
+                    ans[i][j][1] = ans[i][j][0]
+                    ans[i][j][2] = ans[i][j][0]
+        return ans
 
     @staticmethod
     def apply_to_matrix(matrix, func, independent_layer=False, two_dim=False):
