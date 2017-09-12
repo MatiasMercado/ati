@@ -125,6 +125,8 @@ class ImageEditor(tk.Frame):
         self.normal_prob.set(1)
         self.rayleigh_scale = tk.DoubleVar()
         self.rayleigh_scale.set(0.25)
+        self.rayleigh_prob = tk.DoubleVar()
+        self.rayleigh_prob.set(1)
         self.exp_scale = tk.DoubleVar()
         self.exp_scale.set(0.25)
         self.exp_prob = tk.DoubleVar()
@@ -181,34 +183,38 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.normal_prob, textvariable=self.normal_prob).grid(row=13, column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=14, columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Rayleigh Scale').grid(row=15, column=0)
-        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=15, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=16, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Rayleigh Noise').grid(row=15, column=0)
+        tk.Label(settings_frame, text='Scale').grid(row=16, column=0)
+        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=16, column=1)
 
-        tk.Label(settings_frame, text='Exp Noise').grid(row=17, column=0)
-        tk.Label(settings_frame, text='Exp Scale').grid(row=18, column=0)
-        tk.Entry(settings_frame, text=self.exp_scale, textvariable=self.exp_scale).grid(row=18, column=1)
+        tk.Label(settings_frame, text='Probability').grid(row=17, column=0)
+        tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=17, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=18, columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Exp Probability').grid(row=19, column=0)
-        tk.Entry(settings_frame, text=self.exp_prob, textvariable=self.exp_prob).grid(row=19, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=20, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Exp Noise').grid(row=19, column=0)
+        tk.Label(settings_frame, text='Scale').grid(row=20, column=0)
+        tk.Entry(settings_frame, text=self.exp_scale, textvariable=self.exp_scale).grid(row=20, column=1)
 
-        tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=21, column=0)
-        tk.Label(settings_frame, text='P0').grid(row=22, column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=22, column=1)
-        tk.Label(settings_frame, text='P1').grid(row=23, column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=23, column=1)
+        tk.Label(settings_frame, text='Exp Probability').grid(row=21, column=0)
+        tk.Entry(settings_frame, text=self.exp_prob, textvariable=self.exp_prob).grid(row=21, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=22, columnspan=2, sticky=(tk.W, tk.E))
 
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=24, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=23, column=0)
+        tk.Label(settings_frame, text='P0').grid(row=24, column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=24, column=1)
+        tk.Label(settings_frame, text='P1').grid(row=25, column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=25, column=1)
 
-        tk.Label(settings_frame, text='Mean Filter Size').grid(row=25, column=0)
-        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=25, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=26, columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=26, column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=26, column=1)
+        tk.Label(settings_frame, text='Mean Filter Size').grid(row=27, column=0)
+        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=27, column=1)
 
-        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=27, column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=27, column=1)
+        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=28, column=0)
+        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=28, column=1)
+
+        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=29, column=0)
+        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=29, column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -372,7 +378,7 @@ class ImageEditor(tk.Frame):
     def rayleigh_noise(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_noise_rayleigh(image, self.rayleigh_scale.get())
+        transformed_img = Util.add_noise_rayleigh(image, self.rayleigh_scale.get(), self.rayleigh_prob.get())
         self.create_new_image(transformed_img)
 
     def exp_noise(self):
@@ -436,5 +442,5 @@ class ImageEditor(tk.Frame):
 if __name__ == '__main__':
     app = ImageEditor()
     app.master.title('Image Editor')
-    app.master.geometry('400x500')
+    app.master.geometry('400x530')
     app.mainloop()

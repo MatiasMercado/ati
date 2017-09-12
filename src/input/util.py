@@ -128,6 +128,10 @@ class Util:
         # return np.multiply(img1, img2)
 
     @staticmethod
+    def multiply_not_zero(img1, img2):
+        return Util.element_wise_operation(img1, img2, lambda x, y: x if y==0 else x * y)
+
+    @staticmethod
     def linear_transform(image, final_range=(0, 255), to_char=True):
         (final_min, final_max) = final_range
         final_difference = final_max - final_min
@@ -222,13 +226,6 @@ class Util:
     @staticmethod
     def gamma_power(image, gamma):
         c = np.power(255, 1 - gamma)
-
-        # for i in range(image.shape[0]):
-        #     for j in range(image.shape[1]):
-        #         for k in range(image.shape[2]):
-        #             ans[i][j][k] = c * pow(image[i][j][k], gamma)
-        # return ans
-
         def f(val):
             return c * np.power(val, gamma)
 
@@ -252,16 +249,26 @@ class Util:
         return np.random.binomial(1, prob, shape)
 
     @staticmethod
-    def add_noise_exponential(image, scale=1, prob=0.5):
+    def add_noise_exponential(image, scale=1, prob=1):
         aux = Util.multiply(
             np.random.exponential(scale, image.shape),
             Util.binary_matrix(image.shape, prob)
         )
-        aux = Util.multiply(image, aux)
+        aux = Util.multiply_not_zero(image, aux)
         return aux
 
     @staticmethod
-    def add_additive_noise_normal(image, mu=0, sigma=1, prob=0.5):
+    def add_noise_rayleigh(image, scale=1, prob=1):
+        # return Util.multiply(image, np.random.rayleigh(scale=scale, size=image.shape))
+        aux = Util.multiply(
+            np.random.rayleigh(scale, image.shape),
+            Util.binary_matrix(image.shape, prob)
+        )
+        aux = Util.multiply_not_zero(image, aux)
+        return aux
+
+    @staticmethod
+    def add_additive_noise_normal(image, mu=0, sigma=20, prob=1):
         return Util.sum(image, Util.multiply(
             np.random.normal(mu, sigma, image.shape),
             Util.binary_matrix(image.shape, prob)
@@ -333,10 +340,6 @@ class Util:
                     for k in range(matrix1.shape[2]):
                         ans[i][j][k] = aux
         return ans
-
-    @staticmethod
-    def add_noise_rayleigh(image, scale=1):
-        return Util.multiply(image, np.random.rayleigh(scale=scale, size=image.shape))
 
 # img = Util.load_raw('LENA.RAW')
 # img = Util.apply_to_matrix(img, lambda x: [x,x,x], two_dim=True)
