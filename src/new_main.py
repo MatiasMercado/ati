@@ -1,13 +1,16 @@
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
+
+from src.input.util import Util
+from src.input.filter_provider import FilterProvider
+from src.input.provider import Provider
+from PIL import ImageTk
 import tkinter as tk
 import tkinter.ttk as ttk
 import PIL
-from PIL import ImageTk
 import numpy as np
 
-from input.filter_provider import FilterProvider
-from input.provider import Provider
-from input.util import Util
-from matplotlib import pyplot as plt
 
 
 class ImageEditor(tk.Frame):
@@ -115,7 +118,7 @@ class ImageEditor(tk.Frame):
 
         # Noise
         self.normal_mu = tk.DoubleVar()
-        self.normal_mu .set(0) # THIS SHOULD ALWAYS BE 0
+        self.normal_mu.set(0)  # THIS SHOULD ALWAYS BE 0
         self.normal_sigma = tk.DoubleVar()
         self.normal_sigma.set(20)
         self.normal_prob = tk.DoubleVar()
@@ -127,9 +130,9 @@ class ImageEditor(tk.Frame):
         self.exp_prob = tk.DoubleVar()
         self.exp_prob.set(0.5)
         self.salt_pepper_p1 = tk.DoubleVar()
-        self.salt_pepper_p1.set(0.25)
+        self.salt_pepper_p1.set(0.1)
         self.salt_pepper_p2 = tk.DoubleVar()
-        self.salt_pepper_p2.set(0.25)
+        self.salt_pepper_p2.set(0.1)
 
         # Filters
         self.mean_filter_size = tk.StringVar()
@@ -204,13 +207,16 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=25, column=1)
 
         tk.Label(settings_frame, text='Median Filter Mask').grid(row=26, column=0)
-        tk.Entry(settings_frame, text=self.median_filter_mask, textvariable=self.median_filter_mask).grid(row=26, column=1)
+        tk.Entry(settings_frame, text=self.median_filter_mask, textvariable=self.median_filter_mask).grid(row=26,
+                                                                                                          column=1)
 
         tk.Label(settings_frame, text='Gauss Filter Size').grid(row=27, column=0)
-        tk.Entry(settings_frame, text=self.normal_filter_size, textvariable=self.normal_filter_size).grid(row=27, column=1)
+        tk.Entry(settings_frame, text=self.normal_filter_size, textvariable=self.normal_filter_size).grid(row=27,
+                                                                                                          column=1)
 
         tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=28, column=0)
-        tk.Entry(settings_frame, text=self.normal_filter_sigma, textvariable=self.normal_filter_sigma).grid(row=28, column=1)
+        tk.Entry(settings_frame, text=self.normal_filter_sigma, textvariable=self.normal_filter_sigma).grid(row=28,
+                                                                                                            column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -259,7 +265,7 @@ class ImageEditor(tk.Frame):
         canvas = tk.Canvas(new_window, width=width, height=height, borderwidth=0, highlightthickness=0)
         canvas.grid(row=0, column=0)
         canvas.create_image(0, 0, image=tk_img, anchor=tk.NW)
-        canvas.my_image = tk_img # Used only to prevent image being destroy by garbage collector
+        canvas.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
         self.open_images[new_window.title()] = img_data
 
     def set_active_window(self, event):
@@ -438,9 +444,9 @@ class ImageEditor(tk.Frame):
                 ans[i][j][2] = b[i][j]
         return ans
 
+
 if __name__ == '__main__':
     app = ImageEditor()
     app.master.title('Image Editor')
     app.master.geometry('400x500')
     app.mainloop()
-
