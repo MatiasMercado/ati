@@ -5,6 +5,8 @@ from src.input.util import Util
 WEIGHTED_MEDIAN_MASK = np.matrix([[1, 2, 1],
                                   [2, 4, 2],
                                   [1, 2, 1]])
+
+
 class FilterProvider:
     @staticmethod
     def blur(image, size):
@@ -15,12 +17,16 @@ class FilterProvider:
     @staticmethod
     def gauss_blur(image, size, sigma):
         mask = np.zeros(size)
-        mask = Util.apply_to_matrix_with_position(mask, lambda val, x, y: np.exp(-(x ** 2 + y ** 2) / (sigma ** 2)) / (
-            2 * np.pi * sigma ** 2), two_dim=True)
-        ## WHY???
-        # mask_sum = mask.sum()
-        # mask = Util.apply_to_matrix(mask, lambda val: val / mask_sum, two_dim=True)
-        # mask_sum = mask.sum()
+
+        def gauss_function(x, y):
+            return np.exp(-(x ** 2 + y ** 2) / (sigma ** 2)) / (2 * np.pi * sigma ** 2)
+        # Create Mask
+        for i in range(size[0]):
+            for j in range(size[1]):
+                        mask_index_i = i - int(mask.shape[0]/2) # Go from -rows/2 to +rows/2
+                        mask_index_j = j - int(mask.shape[1]/2) # Go from -cols/2 to +cols/2
+                        mask[i][j] = gauss_function(mask_index_i, mask_index_j)
+
         return FilterProvider.__sliding_window(image, mask)
 
     @staticmethod
@@ -99,4 +105,3 @@ class FilterProvider:
                 for z in range(image.shape[2]):
                     ans[x, y, z] = FilterProvider.__apply_mask(image[:, :, z], (x, y), mask)
         return ans
-
