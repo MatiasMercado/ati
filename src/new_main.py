@@ -275,7 +275,18 @@ class ImageEditor(tk.Frame):
     def histogram(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        plt.hist(image.flatten(), bins=range(256))
+        data = image.flatten()
+
+        data_min = min(data)
+        data_max = max(data)
+        if data_min >=0 and data_max<=255:
+            print("Regular Histogram")
+            plt.hist(image.flatten(), bins=range(256), normed=1)
+        else:
+            # binwidth = data_max - data_min / np.mean(data)
+            binwidth = 10
+            print("Super Histogram")
+            plt.hist(data, bins=np.arange(data_min, data_max + binwidth, binwidth), normed=1)
         plt.show()
 
     def edit_image(self):
@@ -301,21 +312,15 @@ class ImageEditor(tk.Frame):
     def contrast(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        # r = Util.contrast_increase(image[:, :, 0], self.s1.get(), self.s2.get())
-        # g = Util.contrast_increase(image[:, :, 1], self.s1.get(), self.s2.get())
-        # b = Util.contrast_increase(image[:, :, 2], self.s1.get(), self.s2.get())
-        # transformed_img = self.__merge_rgb(r, g, b)
         transformed_img = Util.contrast_increase(image, self.s1.get(), self.s2.get())
         self.create_new_image(transformed_img)
 
     def dynamic_compression(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        # r = Util.dynamic_range_compression(image[:, :, 0])
-        # g = Util.dynamic_range_compression(image[:, :, 1])
-        # b = Util.dynamic_range_compression(image[:, :, 2])
-        # transformed_img = self.__merge_rgb(r, g, b)
         transformed_img = Util.dynamic_range_compression(image)
+
+        sad = transformed_img.flatten()
         self.create_new_image(transformed_img)
 
     def gamma_function(self):

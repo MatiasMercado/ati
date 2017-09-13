@@ -13,7 +13,6 @@ class Util:
     def load_raw(path):
         name = path.split('/')
         name = name[len(name) - 1]
-        print(name)
         size = KNOWN_SIZES[name]
         image = np.fromfile(path, dtype='B').reshape(size[0], size[1])
         aux = np.zeros((image.shape[0], image.shape[1], 3))
