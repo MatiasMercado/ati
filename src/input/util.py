@@ -283,15 +283,17 @@ class Util:
         return value
 
     @staticmethod
-    def add_comino_and_sugar_noise(image, p0=0.1, p1=0.9):
+    def add_comino_and_sugar_noise(image, p0=0.05, p1=0.95, density=1):
         # return Util.apply_to_matrix(image, lambda img: Util.single_comino_and_sugar(img, p0, p1))
+        binary_matrix = Util.binary_matrix((image.shape[0], image.shape[1]), density)
         ans = np.copy(image).astype(float)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                ans[i][j][0] = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
-                if ans[i][j][0] == 0 or ans[i][j][0] == 255:
-                    ans[i][j][1] = ans[i][j][0]
-                    ans[i][j][2] = ans[i][j][0]
+                if binary_matrix[i][j] == 1:
+                    ans[i][j][0] = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
+                    if ans[i][j][0] == 0 or ans[i][j][0] == 255:
+                        ans[i][j][1] = ans[i][j][0]
+                        ans[i][j][2] = ans[i][j][0]
         return ans
 
     @staticmethod

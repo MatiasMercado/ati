@@ -135,6 +135,8 @@ class ImageEditor(tk.Frame):
         self.salt_pepper_p0.set(0.05)
         self.salt_pepper_p1 = tk.DoubleVar()
         self.salt_pepper_p1.set(0.95)
+        self.salt_pepper_density = tk.DoubleVar()
+        self.salt_pepper_density.set(1)
 
         # Filters
         self.mean_filter_size = tk.StringVar()
@@ -179,7 +181,7 @@ class ImageEditor(tk.Frame):
         tk.Label(settings_frame, text='Deviation').grid(row=12, column=0)
         tk.Entry(settings_frame, text=self.normal_sigma, textvariable=self.normal_sigma).grid(row=12, column=1)
 
-        tk.Label(settings_frame, text='Probability').grid(row=13, column=0)
+        tk.Label(settings_frame, text='Density').grid(row=13, column=0)
         tk.Entry(settings_frame, text=self.normal_prob, textvariable=self.normal_prob).grid(row=13, column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=14, columnspan=2, sticky=(tk.W, tk.E))
 
@@ -187,7 +189,7 @@ class ImageEditor(tk.Frame):
         tk.Label(settings_frame, text='Scale').grid(row=16, column=0)
         tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=16, column=1)
 
-        tk.Label(settings_frame, text='Probability').grid(row=17, column=0)
+        tk.Label(settings_frame, text='Density').grid(row=17, column=0)
         tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=17, column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=18, columnspan=2, sticky=(tk.W, tk.E))
 
@@ -195,7 +197,7 @@ class ImageEditor(tk.Frame):
         tk.Label(settings_frame, text='Scale').grid(row=20, column=0)
         tk.Entry(settings_frame, text=self.exp_scale, textvariable=self.exp_scale).grid(row=20, column=1)
 
-        tk.Label(settings_frame, text='Exp Probability').grid(row=21, column=0)
+        tk.Label(settings_frame, text='Density').grid(row=21, column=0)
         tk.Entry(settings_frame, text=self.exp_prob, textvariable=self.exp_prob).grid(row=21, column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=22, columnspan=2, sticky=(tk.W, tk.E))
 
@@ -205,16 +207,19 @@ class ImageEditor(tk.Frame):
         tk.Label(settings_frame, text='P1').grid(row=25, column=0)
         tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=25, column=1)
 
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=26, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Density').grid(row=26, column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_density, textvariable=self.salt_pepper_density).grid(row=26, column=1)
 
-        tk.Label(settings_frame, text='Mean Filter Size').grid(row=27, column=0)
-        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=27, column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=27, columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=28, column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=28, column=1)
+        tk.Label(settings_frame, text='Mean Filter Size').grid(row=28, column=0)
+        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=28, column=1)
 
-        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=29, column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=29, column=1)
+        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=29, column=0)
+        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=29, column=1)
+
+        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=30, column=0)
+        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=30, column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -395,7 +400,8 @@ class ImageEditor(tk.Frame):
     def salt_pepper_noise(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_comino_and_sugar_noise(image, self.salt_pepper_p0.get(), self.salt_pepper_p1.get())
+        transformed_img = Util.add_comino_and_sugar_noise(image, self.salt_pepper_p0.get(), self.salt_pepper_p1.get(),
+                                                          self.salt_pepper_density.get())
         self.create_new_image(transformed_img)
 
     # Filter Functions
