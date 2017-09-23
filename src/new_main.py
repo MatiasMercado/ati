@@ -35,9 +35,6 @@ class ImageEditor(tk.Frame):
         self.image_number = 1
         self.open_images = {}
 
-        # Display Settings
-        # self.show_settings()
-
     def create_menu(self):
         root = self.master
 
@@ -280,32 +277,48 @@ class ImageEditor(tk.Frame):
     def histogram(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        data = image.flatten()
-
-        data_min = min(data)
-        data_max = max(data)
-        if data_min >=0 and data_max<=255:
-            print("Regular Histogram")
-            plt.hist(image.flatten(), bins=range(256), normed=1)
-        else:
-            # binwidth = data_max - data_min / np.mean(data)
-            binwidth = 10
-            print("Super Histogram")
-            plt.hist(data, bins=np.arange(data_min, data_max + binwidth, binwidth), normed=1)
+        plt.hist(image.flatten(), bins='auto', normed=1)
         plt.show()
 
-    def edit_image(self):
-        top = self.winfo_toplevel()
-        top.rowconfigure(0, weight=1)
-        top.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
+    def create_edit_panel(self):
+        edit_frame = tk.Frame(self, bd=1)
+        # self.edited_image_label = tk.Label(edit_frame).grid()
+        tk.Button(edit_frame, text='Discard', command=lambda: self.hide_edit_panel)\
+            .grid(columnspan=2, sticky=(tk.W, tk.E))
+        tk.Button(edit_frame, text='Finish', command=lambda: self.create_new_image(self.edited_image))\
+            .grid(columnspan=2, sticky=(tk.W, tk.E))
+        return edit_frame
+        # ----------------- DELETE ----------------------------
+        # top = self.winfo_toplevel()
+        # top.rowconfigure(0, weight=1)
+        # top.columnconfigure(0, weight=1)
+        # self.rowconfigure(0, weight=1)
+        # self.columnconfigure(0, weight=1)
+        # img_data = self.load_image()
+        # pil_img = PIL.Image.fromarray(img_data, 'RGB')
+        # tk_img = ImageTk.PhotoImage(pil_img)
+        # self.label = tk.Label(self.master, image=self.tk_img).grid(row=0, column=0)
+        # self.label.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
+        # -----------------------------------------------
 
-        img_data = self.load_image()
-        pil_img = PIL.Image.fromarray(img_data, 'RGB')
-        tk_img = ImageTk.PhotoImage(pil_img)
-        self.label = tk.Label(self.master, image=self.tk_img).grid(row=0, column=0)
-        self.label.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
+    def show_edit_panel(self):
+        edit_frame = tk.Frame(self, bd=1)
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        self.edited_image = np.copy(image).astype(float)
+        linear_image = Util.linear_transform(self.edited_image)
+        tk.Label(edit_frame, image=linear_image).grid()
+        # edited_image_label.config(image = self.edited_image)
+        self.edit_panel = edit_frame
+        self.edit_panel.grid()
+        tk.Button(edit_frame, text='Discard', command=lambda: self.hide_edit_panel) \
+            .grid(columnspan=2, sticky=(tk.W, tk.E))
+        tk.Button(edit_frame, text='Finish', command=lambda: self.create_new_image(self.edited_image)) \
+            .grid(columnspan=2, sticky=(tk.W, tk.E))
+        return edit_frame
+
+    def hide_edit_panel(self):
+        self.edit_panel.grid_remove()
 
     # Transform Menu Functions
     def negative(self):
