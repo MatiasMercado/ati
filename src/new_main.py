@@ -1,7 +1,6 @@
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
-
 from src.input.util import Util
 from src.input.filter_provider import FilterProvider
 from src.input.provider import Provider
@@ -10,7 +9,6 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import PIL
 import numpy as np
-
 
 
 class ImageEditor(tk.Frame):
@@ -145,78 +143,87 @@ class ImageEditor(tk.Frame):
 
     def create_settings(self):
         settings_frame = tk.Frame(self)
+        self.settings_row = 0;
+
+        def curr_row():
+            return self.settings_row;
+
+        def next_row():
+            self.settings_row = self.settings_row + 1
+            return self.settings_row;
+
         # Title
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=0, columnspan=2, sticky=(tk.W, tk.E))
-        tk.Label(settings_frame, text='Settings').grid(row=0, columnspan=2)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=curr_row(), columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Settings').grid(row=curr_row(), columnspan=2)
 
         # Contrast
-        tk.Label(settings_frame, text='Contrast').grid(row=1, column=0)
-        tk.Label(settings_frame, text='S1').grid(row=2, column=0)
-        tk.Entry(settings_frame, text=self.s1, textvariable=self.s1).grid(row=2, column=1)
-        tk.Label(settings_frame, text='S2').grid(row=3, column=0)
-        tk.Entry(settings_frame, text=self.s2, textvariable=self.s2).grid(row=3, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=4, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Contrast').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='S1').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.s1, textvariable=self.s1).grid(row=curr_row(), column=1)
+        tk.Label(settings_frame, text='S2').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.s2, textvariable=self.s2).grid(row=curr_row(), column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         # Gamma
-        tk.Label(settings_frame, text='Gamma').grid(row=5, column=0)
+        tk.Label(settings_frame, text='Gamma').grid(row=next_row(), column=0)
         # tk.Scale(settings_frame, variable=self.gamma, from_=0, to=3, orient=tk.HORIZONTAL).grid(row=4, column=1)
-        tk.Entry(settings_frame, text=self.gamma, textvariable=self.gamma).grid(row=5, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=6, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Entry(settings_frame, text=self.gamma, textvariable=self.gamma).grid(row=curr_row(), column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         # Binary
-        tk.Label(settings_frame, text='Binary Threshold').grid(row=7, column=0)
-        tk.Entry(settings_frame, text=self.binary_threshold, textvariable=self.binary_threshold).grid(row=7, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=8, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Binary Threshold').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.binary_threshold, textvariable=self.binary_threshold).grid(row=curr_row(), column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         # Scalar Product
-        tk.Label(settings_frame, text='Scalar Product').grid(row=9, column=0)
-        tk.Entry(settings_frame, text=self.scalar, textvariable=self.scalar).grid(row=9, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=10, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Scalar Product').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.scalar, textvariable=self.scalar).grid(row=curr_row(), column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         # Noise
-        tk.Label(settings_frame, text='Gauss Noise').grid(row=11, column=0)
-        tk.Label(settings_frame, text='Deviation').grid(row=12, column=0)
-        tk.Entry(settings_frame, text=self.normal_sigma, textvariable=self.normal_sigma).grid(row=12, column=1)
+        tk.Label(settings_frame, text='Gauss Noise').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Deviation').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.normal_sigma, textvariable=self.normal_sigma).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Density').grid(row=13, column=0)
-        tk.Entry(settings_frame, text=self.normal_prob, textvariable=self.normal_prob).grid(row=13, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=14, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.normal_prob, textvariable=self.normal_prob).grid(row=curr_row(), column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Rayleigh Noise').grid(row=15, column=0)
-        tk.Label(settings_frame, text='Scale').grid(row=16, column=0)
-        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=16, column=1)
+        tk.Label(settings_frame, text='Rayleigh Noise').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Scale').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Density').grid(row=17, column=0)
-        tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=17, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=18, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=curr_row(), column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Exp Noise').grid(row=19, column=0)
-        tk.Label(settings_frame, text='Scale').grid(row=20, column=0)
-        tk.Entry(settings_frame, text=self.exp_scale, textvariable=self.exp_scale).grid(row=20, column=1)
+        tk.Label(settings_frame, text='Exp Noise').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Scale').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.exp_scale, textvariable=self.exp_scale).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Density').grid(row=21, column=0)
-        tk.Entry(settings_frame, text=self.exp_prob, textvariable=self.exp_prob).grid(row=21, column=1)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=22, columnspan=2, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.exp_prob, textvariable=self.exp_prob).grid(row=curr_row(), column=1)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=23, column=0)
-        tk.Label(settings_frame, text='P0').grid(row=24, column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=24, column=1)
-        tk.Label(settings_frame, text='P1').grid(row=25, column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=25, column=1)
+        tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='P0').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=curr_row(), column=1)
+        tk.Label(settings_frame, text='P1').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Density').grid(row=26, column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_density, textvariable=self.salt_pepper_density).grid(row=26, column=1)
+        tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.salt_pepper_density, textvariable=self.salt_pepper_density).grid(row=curr_row(), column=1)
 
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=27, columnspan=2, sticky=(tk.W, tk.E))
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Mean Filter Size').grid(row=28, column=0)
-        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=28, column=1)
+        tk.Label(settings_frame, text='Mean Filter Size').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=29, column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=29, column=1)
+        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=30, column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=30, column=1)
+        tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=curr_row(), column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
