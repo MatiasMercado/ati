@@ -5,8 +5,6 @@ from src.input.util import Util
 WEIGHTED_MEDIAN_MASK = np.matrix([[1, 2, 1],
                                   [2, 4, 2],
                                   [1, 2, 1]])
-
-
 class FilterProvider:
     @staticmethod
     def blur(image, size):
@@ -105,3 +103,52 @@ class FilterProvider:
                 for z in range(image.shape[2]):
                     ans[x, y, z] = FilterProvider.__apply_mask(image[:, :, z], (x, y), mask)
         return ans
+
+    @staticmethod
+    def y_border(image, weighted=False):
+        mask = np.zeros((3, 3))
+        for x in range(3):
+            for y in range(3):
+                if x == 0:
+                    if y == 1 and weighted:
+                        mask[x][y] = 2
+                    else:
+                        mask[x][y] = 1
+                elif x == 2:
+                    if y == 1 and weighted:
+                        mask[x][y] = -2
+                    else:
+                        mask[x][y] = -1
+                else:
+                    mask[x][y] = 0
+        return FilterProvider.__sliding_window(image, mask)
+
+    @staticmethod
+    def x_border(image, weighted=False):
+        mask = np.zeros((3, 3))
+        for x in range(3):
+            for y in range(3):
+                if y == 0:
+                    if x == 1 and weighted:
+                        mask[x][y] = 2
+                    else:
+                        mask[x][y] = 1
+                elif y == 2:
+                    if x == 1 and weighted:
+                        mask[x][y] = -2
+                    else:
+                        mask[x][y] = -1
+                else:
+                    mask[x][y] = 0
+        return FilterProvider.__sliding_window(image, mask)
+
+
+# img = Util.load_raw('LENA.RAW')
+# # img = Util.apply_to_matrix(img, lambda x: [x,x,x], two_dim=True)
+# img_x = FilterProvider.x_border(img, False)
+# img_x = Util.apply_to_matrix(img_x, lambda p: np.abs(p))
+# Util.save_raw(img_x, 'x_lena')
+#
+# img_y = FilterProvider.y_border(img, False)
+# img_y = Util.apply_to_matrix(img_y, lambda p: np.abs(p))
+# Util.save_raw(img_y, 'y_lena')

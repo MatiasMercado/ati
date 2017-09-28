@@ -2,10 +2,14 @@ import cv2
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from src.input.distance_util import DistanceUtil
 
 # For each image store (HEIGHT, WIDTH)
-KNOWN_SIZES = {'GIRL.RAW': (164, 389), 'BARCO.RAW': (207, 290), 'LENA.RAW': (256, 256), 'LENAX.RAW': (256, 256), 'GIRL2.RAW': (256, 256), 'FRACTAL.RAW': (200, 200)}
+KNOWN_SIZES = {'GIRL.RAW': (164, 389),
+               'BARCO.RAW': (207, 290),
+               'LENA.RAW': (256, 256),
+               'LENAX.RAW': (256, 256),
+               'GIRL2.RAW': (256, 256),
+               'FRACTAL.RAW': (200, 200)}
 
 
 class Util:
@@ -13,7 +17,10 @@ class Util:
     def load_raw(path):
         name = path.split('/')
         name = name[len(name) - 1]
-        size = KNOWN_SIZES[name]
+        if KNOWN_SIZES.__contains__(name):
+            size = KNOWN_SIZES[name]
+        else:
+            size = (256, 256)
         image = np.fromfile(path, dtype='B').reshape(size[0], size[1])
         aux = np.zeros((image.shape[0], image.shape[1], 3))
         for i in range(image.shape[0]):
