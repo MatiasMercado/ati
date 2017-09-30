@@ -1,4 +1,5 @@
 import matplotlib
+
 matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 from src.input.util import Util
@@ -180,7 +181,8 @@ class ImageEditor(tk.Frame):
 
         # Binary
         tk.Label(settings_frame, text='Binary Threshold').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.binary_threshold, textvariable=self.binary_threshold).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.binary_threshold, textvariable=self.binary_threshold).grid(row=curr_row(),
+                                                                                                      column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         # Scalar Product
@@ -199,10 +201,12 @@ class ImageEditor(tk.Frame):
 
         tk.Label(settings_frame, text='Rayleigh Noise').grid(row=next_row(), column=0)
         tk.Label(settings_frame, text='Scale').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=curr_row(),
+                                                                                                  column=1)
 
         tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=curr_row(),
+                                                                                                column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         tk.Label(settings_frame, text='Exp Noise').grid(row=next_row(), column=0)
@@ -215,23 +219,29 @@ class ImageEditor(tk.Frame):
 
         tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=next_row(), column=0)
         tk.Label(settings_frame, text='P0').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=curr_row(),
+                                                                                                  column=1)
         tk.Label(settings_frame, text='P1').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=curr_row(),
+                                                                                                  column=1)
 
         tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_density, textvariable=self.salt_pepper_density).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.salt_pepper_density, textvariable=self.salt_pepper_density).grid(
+            row=curr_row(), column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         tk.Label(settings_frame, text='Mean Filter Size').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=curr_row(),
+                                                                                                      column=1)
 
         tk.Label(settings_frame, text='Gauss Filter Size').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=curr_row(),
+                                                                                                        column=1)
 
         tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(
+            row=curr_row(), column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -320,13 +330,13 @@ class ImageEditor(tk.Frame):
 
         coord_frame = tk.Frame(self)
         tk.Label(coord_frame, text='(x,y)').grid(row=0, column=0, columnspan=3)
-        tk.Entry(coord_frame, text=self.x_coord, textvariable=self.x_coord, width=5).grid(row=1,column=0)
-        tk.Entry(coord_frame, text=self.y_coord, textvariable=self.y_coord, width=5).grid(row=1,column=1)
+        tk.Entry(coord_frame, text=self.x_coord, textvariable=self.x_coord, width=5).grid(row=1, column=0)
+        tk.Entry(coord_frame, text=self.y_coord, textvariable=self.y_coord, width=5).grid(row=1, column=1)
         tk.Label(coord_frame, text='(r,g,b)').grid(row=2, column=0, columnspan=3)
         tk.Entry(coord_frame, text=self.r_value, textvariable=self.r_value, width=5).grid(row=3, column=0)
         tk.Entry(coord_frame, text=self.g_value, textvariable=self.g_value, width=5).grid(row=3, column=1)
         tk.Entry(coord_frame, text=self.b_value, textvariable=self.b_value, width=5).grid(row=3, column=2)
-        tk.Button(coord_frame, text='Set Value').grid(row = 1, column = 2, padx=10)
+        tk.Button(coord_frame, text='Set Value').grid(row=1, column=2, padx=10)
 
         ttk.Separator(coord_frame, orient=tk.HORIZONTAL).grid(row=5, columnspan=3, sticky=(tk.W, tk.E), pady=10)
 
@@ -335,7 +345,6 @@ class ImageEditor(tk.Frame):
 
         # TODO: return coord_frame and save it to hide it later (copy create_settings method)
         coord_frame.grid(row=0, column=0)
-
 
     # def create_edit_panel(self):
     #     edit_frame = tk.Frame(self, bd=1)

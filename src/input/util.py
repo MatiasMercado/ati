@@ -1,7 +1,5 @@
 import cv2
-import math
 import numpy as np
-import matplotlib.pyplot as plt
 
 # For each image store (HEIGHT, WIDTH)
 KNOWN_SIZES = {'GIRL.RAW': (164, 389),
@@ -135,7 +133,7 @@ class Util:
 
     @staticmethod
     def multiply_not_zero(img1, img2):
-        return Util.element_wise_operation(img1, img2, lambda x, y: x if y==0 else x * y)
+        return Util.element_wise_operation(img1, img2, lambda x, y: x if y == 0 else x * y)
 
     @staticmethod
     def linear_transform(image, final_range=(0, 255), to_char=True):
@@ -208,6 +206,7 @@ class Util:
         # Don't delete this comment, it gives info. about the image
         print('Contrast\nMean: {}, Sigma: {}\nr1: {}, r2: {}\nm1: {}, m2: {}, m3: {}'
               .format(mean, sigma, r1, r2, m1, m2, m3))
+
         def f(val):
             if 0 <= val <= r1:
                 return m1 * val + b1
@@ -232,6 +231,7 @@ class Util:
     @staticmethod
     def gamma_power(image, gamma):
         c = np.power(255, 1 - gamma)
+
         def f(val):
             return c * np.power(val, gamma)
 

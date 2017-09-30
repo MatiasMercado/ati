@@ -1,4 +1,5 @@
 import numpy as np
+
 from src.input.distance_util import DistanceUtil
 from src.input.util import Util
 
@@ -103,4 +104,3 @@ class Provider:
                 my_h_acu[i] = np.round((my_h_acu[i] - min_h) * 255 / (1 - min_h))
         ans = Util.apply_to_matrix(image, lambda p: my_h_acu[p.astype(int)])
         return ans
-
