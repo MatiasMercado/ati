@@ -42,13 +42,19 @@ class FilterProvider:
         return FilterProvider.sliding_window(image, mask)
 
     @staticmethod
-    def median_filter(image, mask=WEIGHTED_MEDIAN_MASK, weighted=False, border_policy=0):
+    def median_filter(image, mask=WEIGHTED_MEDIAN_MASK, weighted=False, independent_layer=False, border_policy=0):
         ans = np.zeros(image.shape)
         (image_width, image_height) = image.shape[0], image.shape[1]
         for x in range(image_width):
             for y in range(image_height):
-                for z in range(image.shape[2]):
-                    ans[x, y, z] = FilterProvider.__apply_mask_median(image[:, :, z], (x, y), mask, weighted=weighted)
+                if independent_layer:
+                    for z in range(image.shape[2]):
+                        ans[x, y, z] = FilterProvider.__apply_mask_median(image[:, :, z], (x, y), mask,
+                                                                          weighted=weighted)
+                else:
+                    aux = FilterProvider.__apply_mask_median(image[:, :, z], (x, y), mask, weighted=weighted)
+                    for z in range(image.shape[2]):
+                        ans[x, y, z] = aux
         return ans
 
     @staticmethod

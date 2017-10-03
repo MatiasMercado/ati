@@ -122,18 +122,19 @@ class Util:
         return ans
 
     @staticmethod
-    def sum(img1, img2):
-        return Util.element_wise_operation(img1, img2, lambda x, y: x + y)
+    def sum(img1, img2, independent_layer=False):
+        return Util.element_wise_operation(img1, img2, lambda x, y: x + y, independent_layer=independent_layer)
         # return np.sum(img1, img2)
 
     @staticmethod
-    def multiply(img1, img2):
-        return Util.element_wise_operation(img1, img2, lambda x, y: x * y)
+    def multiply(img1, img2, independent_layer=False):
+        return Util.element_wise_operation(img1, img2, lambda x, y: x * y, independent_layer=independent_layer)
         # return np.multiply(img1, img2)
 
     @staticmethod
-    def multiply_not_zero(img1, img2):
-        return Util.element_wise_operation(img1, img2, lambda x, y: x if y == 0 else x * y)
+    def multiply_not_zero(img1, img2, independent_layer=False):
+        return Util.element_wise_operation(img1, img2, lambda x, y: x if y == 0 else x * y,
+                                           independent_layer=independent_layer)
 
     @staticmethod
     def linear_transform(image, final_range=(0, 255), to_char=True):
@@ -255,30 +256,33 @@ class Util:
         return np.random.binomial(1, prob, shape)
 
     @staticmethod
-    def add_noise_exponential(image, scale=1, prob=1):
+    def add_noise_exponential(image, scale=1, prob=1, independent_layer=False):
         aux = Util.multiply(
             np.random.exponential(scale, image.shape),
-            Util.binary_matrix(image.shape, prob)
+            Util.binary_matrix(image.shape, prob),
+            independent_layer=independent_layer
         )
-        aux = Util.multiply_not_zero(image, aux)
+        aux = Util.multiply_not_zero(image, aux, independent_layer=independent_layer)
         return aux
 
     @staticmethod
-    def add_noise_rayleigh(image, scale=1, prob=1):
+    def add_noise_rayleigh(image, scale=1, prob=1, independent_layer=False):
         # return Util.multiply(image, np.random.rayleigh(scale=scale, size=image.shape))
         aux = Util.multiply(
             np.random.rayleigh(scale, image.shape),
-            Util.binary_matrix(image.shape, prob)
+            Util.binary_matrix(image.shape, prob),
+            independent_layer=False
         )
-        aux = Util.multiply_not_zero(image, aux)
+        aux = Util.multiply_not_zero(image, aux, independent_layer=independent_layer)
         return aux
 
     @staticmethod
-    def add_additive_noise_normal(image, mu=0, sigma=20, prob=1):
+    def add_additive_noise_normal(image, mu=0, sigma=20, prob=1, independent_layer=False):
         return Util.sum(image, Util.multiply(
             np.random.normal(mu, sigma, image.shape),
-            Util.binary_matrix(image.shape, prob)
-        ))
+            Util.binary_matrix(image.shape, prob),
+            independent_layer=independent_layer
+        ), independent_layer=independent_layer)
 
     @staticmethod
     def single_comino_and_sugar(value, p0, p1):
@@ -297,10 +301,11 @@ class Util:
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 if binary_matrix[i][j] == 1:
-                    ans[i][j][0] = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
-                    if ans[i][j][0] == 0 or ans[i][j][0] == 255:
-                        ans[i][j][1] = ans[i][j][0]
-                        ans[i][j][2] = ans[i][j][0]
+                    aux = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
+                    ans[i][j][0] = aux
+                    if aux == 0 or aux == 255:
+                        ans[i][j][1] = aux
+                        ans[i][j][2] = aux
         return ans
 
     @staticmethod
