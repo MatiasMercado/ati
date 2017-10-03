@@ -291,7 +291,7 @@ class ImageEditor(tk.Frame):
         if title.__len__() == 0:
             new_window.title('Image {}'.format(self.image_number))
         else:
-            new_window.title(title)
+            new_window.title('{} {}'.format(title, self.image_number))
         new_window.bind('<ButtonRelease-1>', self.set_active_window)
         new_window.bind('<Destroy>', self.remove_open_image)
 

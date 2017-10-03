@@ -52,7 +52,7 @@ class FilterProvider:
                         ans[x, y, z] = FilterProvider.__apply_mask_median(image[:, :, z], (x, y), mask,
                                                                           weighted=weighted)
                 else:
-                    aux = FilterProvider.__apply_mask_median(image[:, :, z], (x, y), mask, weighted=weighted)
+                    aux = FilterProvider.__apply_mask_median(image[:, :, 0], (x, y), mask, weighted=weighted)
                     for z in range(image.shape[2]):
                         ans[x, y, z] = aux
         return ans
@@ -144,7 +144,7 @@ class FilterProvider:
         ret = np.zeros(image.shape)
         for i in range(4):
             ret = Util.element_wise_operation(ret, FilterProvider.border(
-                FilterProvider.rotate_matrix(image), weighted=weighted), merge_function)
+                image, weighted=weighted), merge_function)
         return ret
 
     @staticmethod
