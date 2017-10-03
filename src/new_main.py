@@ -9,6 +9,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import PIL
 import numpy as np
+import math
 
 
 class ImageEditor(tk.Frame):
@@ -33,12 +34,16 @@ class ImageEditor(tk.Frame):
         self.image_number = 1
         self.open_images = {}
 
-        self.x_coord = tk.DoubleVar();
-        self.y_coord = tk.DoubleVar();
+        self.x_coord = tk.IntVar();
+        self.y_coord = tk.IntVar();
         self.r_value = tk.DoubleVar();
         self.g_value = tk.DoubleVar();
         self.b_value = tk.DoubleVar();
-        # is_selected
+        self.r_average = tk.DoubleVar();
+        self.g_average = tk.DoubleVar();
+        self.b_average = tk.DoubleVar();
+        self.selection_square = None;
+        self.is_selected = False;
         # selection_x1, y1, x2, y2
 
     def create_menu(self):
@@ -299,6 +304,16 @@ class ImageEditor(tk.Frame):
         self.wait_variable(self.active_window)
         img_data = self.open_images[self.active_window.get()]
 
+        # Auxiliar functions for building the grid
+        self.edit_panel_row = 0
+
+        def curr_row():
+            return self.edit_panel_row
+
+        def next_row():
+            self.edit_panel_row = self.edit_panel_row + 1
+            return self.edit_panel_row
+
         linear_img = Util.linear_transform(img_data)
         pil_img = PIL.Image.fromarray(linear_img, 'RGB')
         tk_img = ImageTk.PhotoImage(pil_img)
@@ -307,71 +322,101 @@ class ImageEditor(tk.Frame):
 
         root = self.master;
         canvas = tk.Canvas(root, width=width, height=height, borderwidth=0, highlightthickness=0)
-        canvas.grid(row=0, column=1)
+        canvas.grid(row=curr_row(), column=1)
         canvas.create_image(0, 0, image=tk_img, anchor=tk.NW)
+
         canvas.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
 
+        self.edited_img = tk_img
         self.edited_img_data = np.copy(img_data).astype(float)
-        # self.edited_img_canvas = canvas
+        self.edited_img_canvas = canvas
 
-        coord_frame = tk.Frame(self)
-        tk.Label(coord_frame, text='(x,y)').grid(row=0, column=0, columnspan=3)
-        tk.Entry(coord_frame, text=self.x_coord, textvariable=self.x_coord, width=5).grid(row=1,column=0)
-        tk.Entry(coord_frame, text=self.y_coord, textvariable=self.y_coord, width=5).grid(row=1,column=1)
-        tk.Label(coord_frame, text='(r,g,b)').grid(row=2, column=0, columnspan=3)
-        tk.Entry(coord_frame, text=self.r_value, textvariable=self.r_value, width=5).grid(row=3, column=0)
-        tk.Entry(coord_frame, text=self.g_value, textvariable=self.g_value, width=5).grid(row=3, column=1)
-        tk.Entry(coord_frame, text=self.b_value, textvariable=self.b_value, width=5).grid(row=3, column=2)
-        tk.Button(coord_frame, text='Set Value').grid(row = 1, column = 2, padx=10)
+        self.coord_frame = tk.Frame(self)
+        tk.Label(self.coord_frame, text='(x,y)').grid(row=curr_row(), column=0, columnspan=3)
+        tk.Entry(self.coord_frame, text=self.x_coord, textvariable=self.x_coord, width=5).grid(row=next_row(),column=0)
+        tk.Entry(self.coord_frame, text=self.y_coord, textvariable=self.y_coord, width=5).grid(row=curr_row(),column=1)
+        tk.Button(self.coord_frame, text='Set Value', command=self.__set_value).grid(row = curr_row(), column = 2, padx=10)
 
-        ttk.Separator(coord_frame, orient=tk.HORIZONTAL).grid(row=5, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        tk.Label(self.coord_frame, text='(r,g,b)').grid(row=next_row(), column=0, columnspan=3)
+        tk.Entry(self.coord_frame, text=self.r_value, textvariable=self.r_value, width=5).grid(row=next_row(), column=0)
+        tk.Entry(self.coord_frame, text=self.g_value, textvariable=self.g_value, width=5).grid(row=curr_row(), column=1)
+        tk.Entry(self.coord_frame, text=self.b_value, textvariable=self.b_value, width=5).grid(row=curr_row(), column=2)
 
-        tk.Button(coord_frame, text='Cancel').grid(row=6, column=0, columnspan=1, pady=10)
-        tk.Button(coord_frame, text='Save').grid(row=6, column=2, columnspan=1, pady=10)
+        tk.Label(self.coord_frame, text='Gray Level Average').grid(row=next_row(), column=0, columnspan=3)
+        tk.Label(self.coord_frame, text=self.r_average, textvariable=self.r_average, width=5).grid(row=next_row(), column=0)
+        tk.Label(self.coord_frame, text=self.g_average, textvariable=self.g_average, width=5).grid(row=curr_row(), column=1)
+        tk.Label(self.coord_frame, text=self.b_average, textvariable=self.b_average, width=5).grid(row=curr_row(), column=2)
+
+        ttk.Separator(self.coord_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=3, sticky=(tk.W, tk.E), pady=10)
+
+        tk.Button(self.coord_frame, text='Cancel', command=self.hide_edit_panel).grid(row=next_row(), column=0, columnspan=1, pady=10)
+        tk.Button(self.coord_frame, text='Save', command=self.save_edition).grid(row=curr_row(), column=2, columnspan=1, pady=10)
 
         # TODO: return coord_frame and save it to hide it later (copy create_settings method)
-        coord_frame.grid(row=0, column=0)
+        self.coord_frame.grid(row=0, column=0)
 
+        canvas.bind("<ButtonPress>", self.__pixel_selection)
+        canvas.bind("<B1-Motion>", self.__range_selection)
 
-    # def create_edit_panel(self):
-    #     edit_frame = tk.Frame(self, bd=1)
-    #     # self.edited_image_label = tk.Label(edit_frame).grid()
-    #     tk.Button(edit_frame, text='Discard', command=lambda: self.hide_edit_panel)\
-    #         .grid(columnspan=2, sticky=(tk.W, tk.E))
-    #     tk.Button(edit_frame, text='Finish', command=lambda: self.create_new_image(self.edited_image))\
-    #         .grid(columnspan=2, sticky=(tk.W, tk.E))
-    #     return edit_frame
-    #     # ----------------- DELETE ----------------------------
-    #     # top = self.winfo_toplevel()
-    #     # top.rowconfigure(0, weight=1)
-    #     # top.columnconfigure(0, weight=1)
-    #     # self.rowconfigure(0, weight=1)
-    #     # self.columnconfigure(0, weight=1)
-    #     # img_data = self.load_image()
-    #     # pil_img = PIL.Image.fromarray(img_data, 'RGB')
-    #     # tk_img = ImageTk.PhotoImage(pil_img)
-    #     # self.label = tk.Label(self.master, image=self.tk_img).grid(row=0, column=0)
-    #     # self.label.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
-    #     # -----------------------------------------------
-    #
-    # def show_edit_panel(self):
-    #     edit_frame = tk.Frame(self, bd=1)
-    #     self.wait_variable(self.active_window)
-    #     image = self.open_images[self.active_window.get()]
-    #     self.edited_image = np.copy(image).astype(float)
-    #     linear_image = Util.linear_transform(self.edited_image)
-    #     tk.Label(edit_frame, image=linear_image).grid()
-    #     # edited_image_label.config(image = self.edited_image)
-    #     self.edit_panel = edit_frame
-    #     self.edit_panel.grid()
-    #     tk.Button(edit_frame, text='Discard', command=lambda: self.hide_edit_panel) \
-    #         .grid(columnspan=2, sticky=(tk.W, tk.E))
-    #     tk.Button(edit_frame, text='Finish', command=lambda: self.create_new_image(self.edited_image)) \
-    #         .grid(columnspan=2, sticky=(tk.W, tk.E))
-    #     return edit_frame
-    #
-    # def hide_edit_panel(self):
-    #     self.edit_panel.grid_remove()
+    # Edit Private Functions
+    def __pixel_selection(self, event):
+        self.is_selected = False
+        self.edited_img_canvas.delete(self.selection_square)
+        self.x_coord.set(event.x)
+        self.y_coord.set(event.y)
+        self.r_value.set(self.edited_img_data[self.y_coord.get(), self.x_coord.get(), 0])
+        self.g_value.set(self.edited_img_data[self.y_coord.get(), self.x_coord.get(), 1])
+        self.b_value.set(self.edited_img_data[self.y_coord.get(), self.x_coord.get(), 2])
+
+    def __range_selection(self, event):
+        width = self.edited_img_data.shape[0];
+        height = self.edited_img_data.shape[1];
+        self.is_selected = True
+        self.last_x = event.x
+        self.last_y = event.y
+
+        # Fix the last point of the square to be inside the image
+        if self.last_x > width:
+            self.last_x = width
+        elif self.last_x < 0:
+            self.last_x = 0
+
+        if self.last_y > height:
+            self.last_y = height
+        elif self.last_y < 0:
+            self.last_y = 0
+
+        self.edited_img_canvas.delete(self.selection_square)
+        self.selection_square = self.edited_img_canvas.create_rectangle(self.x_coord.get(), self.y_coord.get(),
+                                                                        self.last_x, self.last_y, fill="#8E3840",
+                                                                        width=0, stipple="gray50")
+
+        # print(Util.get_info(self.edited_img_data, (self.x_coord.get(), self.y_coord.get()), (self.last_x, self.last_y)))
+        # TODO: Fix get_info method to work with 3D matrix. Show it's value on labels.
+        # Maybe convert last_x and last_y to IntVar and show the values on screen to know where the average is
+        # Add a button to save the selection
+        # Add padding to Gray Level Average and replace the text for the (x1, y1), (x2, y2) or smth
+
+    def __set_value(self):
+        x, y = self.x_coord.get(), self.y_coord.get()
+        r, g, b = self.r_value.get(), self.g_value.get(), self.b_value.get()
+        self.edited_img_data[y, x, 0] = r
+        self.edited_img_data[y, x, 1] = g
+        self.edited_img_data[y, x, 2] = b
+
+        linear_img = Util.linear_transform(self.edited_img_data)
+        pil_img = PIL.Image.fromarray(linear_img, 'RGB')
+        tk_img = ImageTk.PhotoImage(pil_img)
+        self.edited_img_canvas.create_image(0, 0, image=tk_img, anchor=tk.NW)
+        self.edited_img_canvas.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
+
+    def hide_edit_panel(self):
+        self.edited_img_canvas.delete('all')
+        self.coord_frame.grid_remove()
+        # self.edit_panel.grid_remove()
+
+    def save_edition(self):
+        self.create_new_image(self.edited_img_data)
 
     # Transform Menu Functions
     def negative(self):
