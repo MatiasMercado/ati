@@ -1,4 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
+from input.filter_provider import FilterProvider
+from input.provider import Provider
 from kivy.app import App
 from kivy.graphics.texture import Texture
 from kivy.graphics.vertex_instructions import Rectangle
@@ -8,10 +11,7 @@ from kivy.uix.dropdown import DropDown
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
-import matplotlib.pyplot as plt
 
-from input.filter_provider import FilterProvider
-from input.provider import Provider
 from src.input.util import Util
 from src.picture import Picture
 

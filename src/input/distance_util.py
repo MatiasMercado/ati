@@ -1,5 +1,3 @@
-
-
 class DistanceUtil:
     @staticmethod
     def sqr_euclidean_distance(p1, p2):

@@ -1,11 +1,12 @@
 import math
+
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.uix.boxlayout import BoxLayout
 
 
 class Picture(BoxLayout):
-    def __init__(self, img, is_color,  x_input, y_input, value_input, **kwargs):
+    def __init__(self, img, is_color, x_input, y_input, value_input, **kwargs):
         super(Picture, self).__init__(**kwargs)
         self.img = img
         self.is_color = is_color
@@ -54,8 +55,8 @@ class Picture(BoxLayout):
             self.selection_end_coordinates = touch.pos
 
             height = math.fabs(touch.y - selection_origin_y)
-            base = math.fabs(touch.x - selection_origin_x )
-            pos = self.calculate_rectangle_pos(selection_origin_x , selection_origin_y, touch.x, touch.y)
+            base = math.fabs(touch.x - selection_origin_x)
+            pos = self.calculate_rectangle_pos(selection_origin_x, selection_origin_y, touch.x, touch.y)
             self.canvas.remove_group('selection')
             with self.canvas:
                 Color(1, 1, 1, 0.3)
@@ -94,5 +95,3 @@ class Picture(BoxLayout):
             else:
                 pos = (end_x, end_y)
         return pos
-
-

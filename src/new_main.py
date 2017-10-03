@@ -1,4 +1,5 @@
 import matplotlib
+
 matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 from src.input.util import Util
@@ -185,7 +186,8 @@ class ImageEditor(tk.Frame):
 
         # Binary
         tk.Label(settings_frame, text='Binary Threshold').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.binary_threshold, textvariable=self.binary_threshold).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.binary_threshold, textvariable=self.binary_threshold).grid(row=curr_row(),
+                                                                                                      column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         # Scalar Product
@@ -204,10 +206,12 @@ class ImageEditor(tk.Frame):
 
         tk.Label(settings_frame, text='Rayleigh Noise').grid(row=next_row(), column=0)
         tk.Label(settings_frame, text='Scale').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=curr_row(),
+                                                                                                  column=1)
 
         tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=curr_row(),
+                                                                                                column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         tk.Label(settings_frame, text='Exp Noise').grid(row=next_row(), column=0)
@@ -220,23 +224,29 @@ class ImageEditor(tk.Frame):
 
         tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=next_row(), column=0)
         tk.Label(settings_frame, text='P0').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=curr_row(),
+                                                                                                  column=1)
         tk.Label(settings_frame, text='P1').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=curr_row(),
+                                                                                                  column=1)
 
         tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.salt_pepper_density, textvariable=self.salt_pepper_density).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.salt_pepper_density, textvariable=self.salt_pepper_density).grid(
+            row=curr_row(), column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         tk.Label(settings_frame, text='Mean Filter Size').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=curr_row(),
+                                                                                                      column=1)
 
         tk.Label(settings_frame, text='Gauss Filter Size').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=curr_row(),
+                                                                                                        column=1)
 
         tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(row=curr_row(), column=1)
+        tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(
+            row=curr_row(), column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -253,7 +263,9 @@ class ImageEditor(tk.Frame):
     def load_image(self):
         img_path = tk.filedialog.askopenfilename(initialdir='../resources/test', title='Select Image')
         img_data = Util.load_image(img_path)
-        self.create_new_image(img_data)
+        title = img_path.split('/')
+        title = title[len(title) - 1]
+        self.create_new_image(img_data, title=title)
 
     def save_image(self):
         self.wait_variable(self.active_window)
@@ -263,7 +275,7 @@ class ImageEditor(tk.Frame):
         # TODO: Change this for a generic save method that checks on the img_path extension
         Util.save_raw(linear_image, img_path)
 
-    def create_new_image(self, img_data):
+    def create_new_image(self, img_data, title=''):
         linear_img = Util.linear_transform(img_data)
         pil_img = PIL.Image.fromarray(linear_img, 'RGB')
         tk_img = ImageTk.PhotoImage(pil_img)
@@ -276,8 +288,10 @@ class ImageEditor(tk.Frame):
 
         new_window.geometry('{}x{}'.format(width, height))
         new_window.resizable(width=False, height=False)
-        new_window.title('Image {}'.format(self.image_number))
-
+        if title.__len__() == 0:
+            new_window.title('Image {}'.format(self.image_number))
+        else:
+            new_window.title(title)
         new_window.bind('<ButtonRelease-1>', self.set_active_window)
         new_window.bind('<Destroy>', self.remove_open_image)
 

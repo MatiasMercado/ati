@@ -1,11 +1,13 @@
 import cv2
-import math
 import numpy as np
-import matplotlib.pyplot as plt
-from src.input.distance_util import DistanceUtil
 
 # For each image store (HEIGHT, WIDTH)
-KNOWN_SIZES = {'GIRL.RAW': (164, 389), 'BARCO.RAW': (207, 290), 'LENA.RAW': (256, 256), 'LENAX.RAW': (256, 256), 'GIRL2.RAW': (256, 256), 'FRACTAL.RAW': (200, 200)}
+KNOWN_SIZES = {'GIRL.RAW': (164, 389),
+               'BARCO.RAW': (207, 290),
+               'LENA.RAW': (256, 256),
+               'LENAX.RAW': (256, 256),
+               'GIRL2.RAW': (256, 256),
+               'FRACTAL.RAW': (200, 200)}
 
 
 class Util:
@@ -13,7 +15,10 @@ class Util:
     def load_raw(path):
         name = path.split('/')
         name = name[len(name) - 1]
-        size = KNOWN_SIZES[name]
+        if KNOWN_SIZES.__contains__(name):
+            size = KNOWN_SIZES[name]
+        else:
+            size = (256, 256)
         image = np.fromfile(path, dtype='B').reshape(size[0], size[1])
         aux = np.zeros((image.shape[0], image.shape[1], 3))
         for i in range(image.shape[0]):
@@ -117,18 +122,19 @@ class Util:
         return ans
 
     @staticmethod
-    def sum(img1, img2):
-        return Util.element_wise_operation(img1, img2, lambda x, y: x + y)
+    def sum(img1, img2, independent_layer=False):
+        return Util.element_wise_operation(img1, img2, lambda x, y: x + y, independent_layer=independent_layer)
         # return np.sum(img1, img2)
 
     @staticmethod
-    def multiply(img1, img2):
-        return Util.element_wise_operation(img1, img2, lambda x, y: x * y)
+    def multiply(img1, img2, independent_layer=False):
+        return Util.element_wise_operation(img1, img2, lambda x, y: x * y, independent_layer=independent_layer)
         # return np.multiply(img1, img2)
 
     @staticmethod
-    def multiply_not_zero(img1, img2):
-        return Util.element_wise_operation(img1, img2, lambda x, y: x if y==0 else x * y)
+    def multiply_not_zero(img1, img2, independent_layer=False):
+        return Util.element_wise_operation(img1, img2, lambda x, y: x if y == 0 else x * y,
+                                           independent_layer=independent_layer)
 
     @staticmethod
     def linear_transform(image, final_range=(0, 255), to_char=True):
@@ -201,6 +207,7 @@ class Util:
         # Don't delete this comment, it gives info. about the image
         print('Contrast\nMean: {}, Sigma: {}\nr1: {}, r2: {}\nm1: {}, m2: {}, m3: {}'
               .format(mean, sigma, r1, r2, m1, m2, m3))
+
         def f(val):
             if 0 <= val <= r1:
                 return m1 * val + b1
@@ -225,6 +232,7 @@ class Util:
     @staticmethod
     def gamma_power(image, gamma):
         c = np.power(255, 1 - gamma)
+
         def f(val):
             return c * np.power(val, gamma)
 
@@ -248,30 +256,33 @@ class Util:
         return np.random.binomial(1, prob, shape)
 
     @staticmethod
-    def add_noise_exponential(image, scale=1, prob=1):
+    def add_noise_exponential(image, scale=1, prob=1, independent_layer=False):
         aux = Util.multiply(
             np.random.exponential(scale, image.shape),
-            Util.binary_matrix(image.shape, prob)
+            Util.binary_matrix(image.shape, prob),
+            independent_layer=independent_layer
         )
-        aux = Util.multiply_not_zero(image, aux)
+        aux = Util.multiply_not_zero(image, aux, independent_layer=independent_layer)
         return aux
 
     @staticmethod
-    def add_noise_rayleigh(image, scale=1, prob=1):
+    def add_noise_rayleigh(image, scale=1, prob=1, independent_layer=False):
         # return Util.multiply(image, np.random.rayleigh(scale=scale, size=image.shape))
         aux = Util.multiply(
             np.random.rayleigh(scale, image.shape),
-            Util.binary_matrix(image.shape, prob)
+            Util.binary_matrix(image.shape, prob),
+            independent_layer=False
         )
-        aux = Util.multiply_not_zero(image, aux)
+        aux = Util.multiply_not_zero(image, aux, independent_layer=independent_layer)
         return aux
 
     @staticmethod
-    def add_additive_noise_normal(image, mu=0, sigma=20, prob=1):
+    def add_additive_noise_normal(image, mu=0, sigma=20, prob=1, independent_layer=False):
         return Util.sum(image, Util.multiply(
             np.random.normal(mu, sigma, image.shape),
-            Util.binary_matrix(image.shape, prob)
-        ))
+            Util.binary_matrix(image.shape, prob),
+            independent_layer=independent_layer
+        ), independent_layer=independent_layer)
 
     @staticmethod
     def single_comino_and_sugar(value, p0, p1):
@@ -290,10 +301,11 @@ class Util:
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 if binary_matrix[i][j] == 1:
-                    ans[i][j][0] = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
-                    if ans[i][j][0] == 0 or ans[i][j][0] == 255:
-                        ans[i][j][1] = ans[i][j][0]
-                        ans[i][j][2] = ans[i][j][0]
+                    aux = Util.single_comino_and_sugar(image[i][j][0], p0, p1)
+                    ans[i][j][0] = aux
+                    if aux == 0 or aux == 255:
+                        ans[i][j][1] = aux
+                        ans[i][j][2] = aux
         return ans
 
     @staticmethod
