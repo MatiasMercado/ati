@@ -5,9 +5,9 @@ from src.input.util import Util
 WEIGHTED_MEDIAN_MASK = np.matrix([[1, 2, 1],
                                   [2, 4, 2],
                                   [1, 2, 1]])
-LORENTZ_DETECTOR = 0
-LECLERC_DETECTOR = 1
-ISOTROPIC_DETECTOR = 2
+LORENTZ_BORDER_DETECTOR = 0
+LECLERC_BORDER_DETECTOR = 1
+ISOTROPIC_BORDER_DETECTOR = 2
 
 class FilterProvider:
     @staticmethod
@@ -203,51 +203,51 @@ class FilterProvider:
         return matrix
 
     @staticmethod
-    def anisotropic_filter(image, t, m, independent_layer=False):
+    def anisotropic_filter(image, t, m, sigma, independent_layer=False):
         aux = image;
         # 0: Lorentz, # 1: Leclerc, 2: Isotropic
-        if m == LORENTZ_DETECTOR:
+        if m == LORENTZ_BORDER_DETECTOR :
             g = FilterProvider.__lorentz
-        elif m == LECLERC_DETECTOR:
+        elif m == LECLERC_BORDER_DETECTOR:
             g = FilterProvider.__leclerc
         else:
             g = FilterProvider.__isotropic
 
-        def anisotropic_single_filter(img, i, j, k, t, g=g):
+        def anisotropic_single_filter(img, i, j, k, sigma, g=g):
             height = img.shape[0]
             width = img.shape[1]
             N = (img[i][j+1][k] - img[i][j][k]) if j+1<height else 0
             S = (img[i][j-1][k] - img[i][j][k]) if j-1>=0 else 0
             E = (img[i+1][j][k] - img[i][j][k]) if i+1<width else 0
             W = (img[i-1][j][k] - img[i][j][k]) if i-1>=0 else 0
-            return img[i][j][k] + 0.25 * (N*g(N, t) + S*g(S, t) + E*g(E, t) + W*g(W, t))
+            return img[i][j][k] + 0.25 * (N*g(N, sigma) + S*g(S, sigma) + E*g(E, sigma) + W*g(W, sigma))
 
         for i in range(t):
-            aux = FilterProvider.__anisotropic_matrix_filter(aux, anisotropic_single_filter, t, independent_layer)
+            aux = FilterProvider.__anisotropic_matrix_filter(aux, anisotropic_single_filter, sigma, independent_layer)
         return aux;
 
     @staticmethod
     def __lorentz(e, t):
-        return 1 / ( (np.abs(e) ** 2) / (t**2) + 1)
+        return 1 /((e/t)**2 + 1)
 
     @staticmethod
     def __leclerc(e, t):
-        return np.exp(-(np.abs(e) ** 2) / (t**2) )
+        return np.exp(-(e/t)**2)
 
     @staticmethod
     def __isotropic(e, t):
         return 1;
 
     @staticmethod
-    def __anisotropic_matrix_filter(matrix, func, t, independent_layer=False):
+    def __anisotropic_matrix_filter(matrix, func, sigma, independent_layer=False):
         ans = np.copy(matrix).astype(float)
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
                 if independent_layer:
                     for k in range(matrix.shape[2]):
-                        ans[i][j][k] = func(matrix, i, j, k, t)
+                        ans[i][j][k] = func(matrix, i, j, k, sigma)
                 else:
-                    aux = func(matrix, i, j, 0, t)
+                    aux = func(matrix, i, j, 0, sigma)
                     for k in range(matrix.shape[2]):
                         ans[i][j][k] = aux
         return ans
@@ -266,5 +266,7 @@ class FilterProvider:
 # Util.save_raw(img_y, 'y_lena')
 
 # img = Util.load_raw('../resources/test/LENA.RAW')
-# aux = FilterProvider.anisotropic_filter(img, 1, 2)
+# salt_img = Util.add_comino_and_sugar_noise(img, density=0.1)
+# Util.save_raw(salt_img, '../resources/test/salt_lena')
+# aux = FilterProvider.anisotropic_filter(salt_img, 5, LORENTZ_BORDER_DETECTOR, 30)
 # Util.save_raw(aux, '../resources/test/anisotropic_lena')
