@@ -1,6 +1,9 @@
 import numpy as np
 
 from src.input.filter_provider import FilterProvider
+from src.input.util import Util
+from src.input.provider import Provider
+from matplotlib import pyplot as plt
 
 DEFAULT_ZERO_DETECTOR_THRESHOLD = 5
 
@@ -66,7 +69,79 @@ class BorderDetector:
                         ans[x, y, z] = aux
         return ans
 
+    @staticmethod
+    def global_threshold(image,ans,threshold,delta,deltaT):
+        if(deltaT<delta):
+            return threshold
+        else:
+            ans=Util.to_binary(image,threshold)
+            g1=0
+            g2=0
+            sumag1=0
+            sumag2=0
+            for i in range(image.shape[0]):
+                for j in range(image.shape[1]):
+                    for k in range(image.shape[2]):
+                        if(ans[i][j][k]==0):
+                            g1+=1
+                            sumag1+=image[i][j][k]
+                        else:
+                            g2+=1
+                            sumag2+=image[i][j][k]
+            m1=(1/g1)*sumag1
+            m2=(1/g2)*sumag2
+            T=(0.5)*(m1+m2)
+            BorderDetector.global_threshold(image,ans, T, delta, abs(T-threshold))
+            return T
 
-# img = Util.load_raw('LENA.RAW')
+    @staticmethod
+    def otsu_variable(hist,N,t):
+        p1=0
+        for i in range(0,t+1):
+            p1=p1+hist[i]
+        mt=0
+        for i in range(0,t+1):
+            mt=mt+(hist[i]*i)
+        mg=0
+        for i in range(0,256):
+            mg=mg+(hist[i]*i)
+        var=((mg*p1-mt)**2)/(p1*(1-p1))
+        return var
+
+    @staticmethod
+    def otsu_threshold(image):
+        hist=Provider.histogram(image)
+        N=image.shape[0]*image.shape[1]
+        for i in range(0,256):
+            hist[i]=hist[i]/N
+        vars=[]
+        for i in range(0,256):
+            vars.append(BorderDetector.otsu_variable(hist,N,i))
+        for i in range(len(vars)):
+            if(vars[i]>255):
+                vars[i]=0
+        tmax=max(vars)
+        print(vars)
+        return tmax
+
+'''
+img = Util.load_raw('LENA.RAW')
+ans=np.zeros(img.shape)
+t=BorderDetector.global_threshold(img,ans,100,1,200)
+img= Util.to_binary(img,t)
+print(img)
+plt.imshow(img)
+plt.show()    
+
+img=Provider.histogram(img)
+print(img)
+plt.hist(img)
+plt.show()
+
+ans=np.zeros(img.shape)
+img = BorderDetector.global_threshold(img,ans,55,5,255)
+plt.imshow(img)
+plt.show()    '''
+
 # img = BorderDetector.laplacian_gaussian_detector(img, 0.7)
 # Util.save_raw(img, 'lena_laplacian_gaussian_border')

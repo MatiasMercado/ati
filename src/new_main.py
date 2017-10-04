@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 from src.input.util import Util
 from src.input.filter_provider import FilterProvider
 from src.input.provider import Provider
+from src.input.border_detectors import BorderDetector
 from PIL import ImageTk
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -98,6 +99,8 @@ class ImageEditor(tk.Frame):
         filter_menu.add_command(label='W. Median', command=self.w_median_filter)
         filter_menu.add_command(label='Gauss', command=self.gauss_filter)
         filter_menu.add_command(label='Borders', command=self.borders_filter)
+        filter_menu.add_command(label='GlobalThreshold', command=self.thresholdg)
+        filter_menu.add_command(label='OtsuThreshold', command=self.thresholdo)
         menu_bar.add_cascade(label='Filter', menu=filter_menu)
 
         # Settings
@@ -154,6 +157,15 @@ class ImageEditor(tk.Frame):
         self.gauss_filter_size.set('3 3')
         self.gauss_filter_sigma = tk.DoubleVar()
         self.gauss_filter_sigma.set(20)
+
+        # Global Threshold
+        self.threshold = tk.DoubleVar()
+        self.threshold.set(100)
+        self.delta = tk.DoubleVar()
+        self.delta.set(1)
+        self.deltaT = tk.DoubleVar()
+        self.deltaT.set(200)
+
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
@@ -248,9 +260,25 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(
             row=curr_row(), column=1)
 
+        # Global Threshold
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
+
+        tk.Label(settings_frame, text='Global Threshold').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Threshold').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.threshold, textvariable=self.threshold).grid(row=curr_row(), column=1)
+
+        tk.Label(settings_frame, text='Delta').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.delta, textvariable=self.delta).grid(row=curr_row(), column=1)
+
+        tk.Label(settings_frame, text='DeltaT').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.deltaT, textvariable=self.deltaT).grid(row=curr_row(), column=1)
+
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
+
         return settings_frame
+
+
 
     def show_settings(self):
         self.settings.grid()
@@ -562,6 +590,21 @@ class ImageEditor(tk.Frame):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.pasa_altos(image)
+        self.create_new_image(transformed_img)
+
+    def thresholdg(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        ans=np.zeros(image.shape)
+        t= BorderDetector.global_threshold(image,ans,self.threshold.get(),self.delta.get(),self.deltaT.get())
+        transformed_img = Util.to_binary(image, t)
+        self.create_new_image(transformed_img)
+
+    def thresholdo(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        t=BorderDetector.otsu_threshold(image)
+        transformed_img =Util.to_binary(image, t)
         self.create_new_image(transformed_img)
 
     # Private Functions
