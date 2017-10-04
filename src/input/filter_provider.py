@@ -5,7 +5,9 @@ from src.input.util import Util
 WEIGHTED_MEDIAN_MASK = np.matrix([[1, 2, 1],
                                   [2, 4, 2],
                                   [1, 2, 1]])
-
+LORENTZ_DETECTOR = 0
+LECLERC_DETECTOR = 1
+ISOTROPIC_DETECTOR = 2
 
 class FilterProvider:
     @staticmethod
@@ -200,6 +202,57 @@ class FilterProvider:
             matrix[0, 1] = aux
         return matrix
 
+    @staticmethod
+    def anisotropic_filter(image, t, m, independent_layer=False):
+        aux = image;
+        # 0: Lorentz, # 1: Leclerc, 2: Isotropic
+        if m == LORENTZ_DETECTOR:
+            g = FilterProvider.__lorentz
+        elif m == LECLERC_DETECTOR:
+            g = FilterProvider.__leclerc
+        else:
+            g = FilterProvider.__isotropic
+
+        def anisotropic_single_filter(img, i, j, k, t, g=g):
+            height = img.shape[0]
+            width = img.shape[1]
+            N = (img[i][j+1][k] - img[i][j][k]) if j+1<height else 0
+            S = (img[i][j-1][k] - img[i][j][k]) if j-1>=0 else 0
+            E = (img[i+1][j][k] - img[i][j][k]) if i+1<width else 0
+            W = (img[i-1][j][k] - img[i][j][k]) if i-1>=0 else 0
+            return img[i][j][k] + 0.25 * (N*g(N, t) + S*g(S, t) + E*g(E, t) + W*g(W, t))
+
+        for i in range(t):
+            aux = FilterProvider.__anisotropic_matrix_filter(aux, anisotropic_single_filter, t, independent_layer)
+        return aux;
+
+    @staticmethod
+    def __lorentz(e, t):
+        return 1 / ( (np.abs(e) ** 2) / (t**2) + 1)
+
+    @staticmethod
+    def __leclerc(e, t):
+        return np.exp(-(np.abs(e) ** 2) / (t**2) )
+
+    @staticmethod
+    def __isotropic(e, t):
+        return 1;
+
+    @staticmethod
+    def __anisotropic_matrix_filter(matrix, func, t, independent_layer=False):
+        ans = np.copy(matrix).astype(float)
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                if independent_layer:
+                    for k in range(matrix.shape[2]):
+                        ans[i][j][k] = func(matrix, i, j, k, t)
+                else:
+                    aux = func(matrix, i, j, 0, t)
+                    for k in range(matrix.shape[2]):
+                        ans[i][j][k] = aux
+        return ans
+
+
 # img = Util.load_raw('LENA.RAW')
 # img = FilterProvider.four_directions_border(img, merge_function=lambda p1, p2: p1 if p1 > p2 else p2)
 # Util.save_raw(img, 'four_dir_borders_lena')
@@ -211,3 +264,7 @@ class FilterProvider:
 # img_y = FilterProvider.y_border(img, False)
 # img_y = Util.apply_to_matrix(img_y, lambda p: np.abs(p))
 # Util.save_raw(img_y, 'y_lena')
+
+# img = Util.load_raw('../resources/test/LENA.RAW')
+# aux = FilterProvider.anisotropic_filter(img, 1, 2)
+# Util.save_raw(aux, '../resources/test/anisotropic_lena')
