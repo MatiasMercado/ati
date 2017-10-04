@@ -34,7 +34,7 @@ class Provider:
 
     @staticmethod
     def __get_rgb_p(C, X, H):
-        print(C, X, H)
+        # print(C, X, H)
         h = int(H / 60)
         if h == 0:
             return C, X, 0

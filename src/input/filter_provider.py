@@ -189,7 +189,7 @@ class FilterProvider:
 
     @staticmethod
     def rotate_matrix(matrix, times=1):
-        print(matrix.shape)
+        # print(matrix.shape)
         for i in range(times):
             aux = matrix[0, 0]
             matrix[0, 0] = matrix[1, 0]

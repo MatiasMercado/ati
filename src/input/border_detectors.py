@@ -121,7 +121,7 @@ class BorderDetector:
             if(vars[i]>255):
                 vars[i]=0
         tmax=max(vars)
-        print(vars)
+        # print(vars)
         return tmax
 
 '''
