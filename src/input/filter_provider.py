@@ -146,7 +146,7 @@ class FilterProvider:
         ret = np.zeros(image.shape)
         for i in range(4):
             ret = Util.element_wise_operation(ret, FilterProvider.border(
-                image, weighted=weighted), merge_function)
+                image, weighted=weighted, direction=i), merge_function)
         return ret
 
     @staticmethod
