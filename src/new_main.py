@@ -687,7 +687,6 @@ class ImageEditor(tk.Frame):
     def thresholdg(self):
         self.wait_variable(self.active_window)
         image, color = self.open_images[self.active_window.get()]
-        # Don't delete this print, it gives info. about the image
         transformed_img = np.zeros(image.shape)
         aux = []
         (width, height, layers) = image.shape
@@ -696,6 +695,10 @@ class ImageEditor(tk.Frame):
                                                 self.deltaT.get())
             print('Global threshold: {}'.format(t))
             aux.append(Util.to_binary(image[:, :, d], t))
+            if(not color):
+                aux.append(aux[0])
+                aux.append(aux[0])
+                break
 
         for x in range(width):
             for y in range(height):
@@ -715,6 +718,10 @@ class ImageEditor(tk.Frame):
             t = BorderDetector.otsu_threshold(image[:, :, d])
             print('Otsu threshold: {}'.format(t))
             aux.append(Util.to_binary(image[:, :, d], t))
+            if (not color):
+                aux.append(aux[0])
+                aux.append(aux[0])
+                break
 
         for x in range(width):
             for y in range(height):
