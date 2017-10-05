@@ -94,10 +94,9 @@ class BorderDetector:
             return T
 
     @staticmethod
-    def otsu_variable(hist, t):
+    def otsu_variable(hist, t, mg):
         p1 = 0
         mt = 0
-        mg = 0
         # for i in range(0, t + 1):
         #     p1 = p1 + hist[i]
         # for i in range(0, t + 1):
@@ -106,7 +105,6 @@ class BorderDetector:
         #     mg = mg + (hist[i] * i)
         #
         for i in range(256):
-            mg = mg + (hist[i] * i)
             if i <= t:
                 p1 = p1 + hist[i]
                 mt = mt + (hist[i] * i)
@@ -118,11 +116,13 @@ class BorderDetector:
     def otsu_threshold(image):
         hist = Provider.histogram(image)
         N = image.shape[0] * image.shape[1]
+        mg = 0
         for i in range(256):
             hist[i] = hist[i] / N
+            mg = mg + (hist[i] * i)
         vars = []
-        for i in range(256):
-            vars.append(BorderDetector.otsu_variable(hist, i))
+        for t in range(256):
+            vars.append(BorderDetector.otsu_variable(hist, t, mg))
         for i in range(len(vars)):
             if vars[i] > 255:
                 vars[i] = 0
