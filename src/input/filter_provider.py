@@ -138,6 +138,7 @@ class FilterProvider:
                 else:
                     mask[x][y] = 0
         mask = FilterProvider.rotate_matrix(mask, direction)
+        print(mask)
         return FilterProvider.sliding_window(image, mask)
 
     @staticmethod
@@ -145,6 +146,17 @@ class FilterProvider:
         # copy = image.copy()
         ret = np.zeros(image.shape)
         for i in range(4):
+            ret = Util.element_wise_operation(ret, FilterProvider.border(
+                image, weighted=weighted, direction=i), merge_function)
+        return ret
+
+    @staticmethod
+    def directional_border_detector(image, weighted=False, directions=[0, 1, 2, 3],
+                               merge_function=lambda p1, p2: p1 if p1 > p2 else p2):
+        # copy = image.copy()
+        ret = np.zeros(image.shape)
+        for i in directions:
+            print(i)
             ret = Util.element_wise_operation(ret, FilterProvider.border(
                 image, weighted=weighted, direction=i), merge_function)
         return ret

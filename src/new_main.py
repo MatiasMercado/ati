@@ -46,7 +46,6 @@ class ImageEditor(tk.Frame):
         self.b_average = tk.DoubleVar();
         self.selection_square = None;
         self.is_selected = False;
-        # selection_x1, y1, x2, y2
 
     def create_menu(self):
         root = self.master
@@ -107,10 +106,10 @@ class ImageEditor(tk.Frame):
         menu_bar.add_cascade(label='Filter', menu=filter_menu)
 
         # Borders Menu
-        borders_menu.add_command(label='Prewitt', command=self.mean_filter)
-        borders_menu.add_command(label='Sobel', command=self.mean_filter)
-        borders_menu.add_command(label='Laplace', command=self.mean_filter)
-        borders_menu.add_command(label='Gaussian Laplace', command=self.mean_filter)
+        borders_menu.add_command(label='Prewitt', command=self.directional_borders_prewitt)
+        borders_menu.add_command(label='Sobel', command=self.directional_borders_sobel)
+        borders_menu.add_command(label='Laplace', command=self.laplace_borders)
+        borders_menu.add_command(label='Gaussian Laplace', command=self.gaussian_laplace_borders)
         menu_bar.add_cascade(label='Borders', menu=borders_menu)
 
         # Settings
@@ -179,6 +178,12 @@ class ImageEditor(tk.Frame):
         self.delta.set(1)
         self.deltaT = tk.DoubleVar()
         self.deltaT.set(200)
+
+        # Borders
+        self.gaussian_laplace_sigma = tk.DoubleVar()
+        self.gaussian_laplace_sigma.set(1)
+        self.borders_detectors_directions = tk.StringVar()
+        self.borders_detectors_directions.set('0 1 2 3')
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
@@ -282,8 +287,20 @@ class ImageEditor(tk.Frame):
         tk.Label(settings_frame, text='Global Threshold Delta').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.delta, textvariable=self.delta).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Global Threshold DeltaT').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.deltaT, textvariable=self.deltaT).grid(row=curr_row(), column=1)
+        # tk.Label(settings_frame, text='Global Threshold DeltaT').grid(row=next_row(), column=0)
+        # tk.Entry(settings_frame, text=self.deltaT, textvariable=self.deltaT).grid(row=curr_row(), column=1)
+
+        # Border Detectors
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
+
+        tk.Label(settings_frame, text='Prewitt/Sobel Directions').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.borders_detectors_directions, textvariable=self.borders_detectors_directions)\
+            .grid(row=curr_row(), column=1)
+
+        tk.Label(settings_frame, text='Gaussian Laplace Deviation').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.gaussian_laplace_sigma, textvariable=self.gaussian_laplace_sigma).grid(row=curr_row(),
+                                                                                                        column=1)
+
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -609,11 +626,37 @@ class ImageEditor(tk.Frame):
             image, self.anisotropic_iter.get(), self.anisotropic_m.get(), self.anisotropic_sigma.get())
         self.create_new_image(transformed_img)
 
-
     def borders_filter(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.pasa_altos(image)
+        self.create_new_image(transformed_img)
+
+    # The arrow points to the negative numbers
+    # 0: DOWN, 1: DOWN-LEFT, 2: LEFT, 3: UP-LEFT
+    def directional_borders_prewitt(self, weighted=False):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        directions_str = self.borders_detectors_directions.get().split()
+        directions = []
+        for i in range(len(directions_str)):
+            directions.append(int(directions_str[i]))
+        transformed_img = FilterProvider.directional_border_detector(image, weighted, directions)
+        self.create_new_image(transformed_img)
+
+    def directional_borders_sobel(self):
+        self.directional_borders_prewitt(True)
+
+    def laplace_borders(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.laplacian_detector(image)
+        self.create_new_image(transformed_img)
+
+    def gaussian_laplace_borders(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.laplacian_gaussian_detector(image, self.gaussian_laplace_sigma.get())
         self.create_new_image(transformed_img)
 
     def thresholdg(self):
