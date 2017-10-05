@@ -33,21 +33,21 @@ class Util:
         image = cv2.imread(path)
         if image is None:
             return Util.load_raw(path)
-        (width, height) = (image.shape[0], image.shape[1])
+        # (width, height) = (image.shape[0], image.shape[1])
 
         # Change bgr to rgb color format
         img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        is_color = False
-        for x in range(width):
-            for y in range(height):
-                is_color = img[x, y, 0] is not img[x, y, 1] or img[x, y, 0] is not img[x, y, 2]
-            if is_color:
-                break
-        if is_color:
-            #     return img.astype('float'), True
-            # return img.astype('float'), False
-            return img.astype('float')
+        # is_color = False
+        # for x in range(width):
+        #     for y in range(height):
+        #         is_color = img[x, y, 0] is not img[x, y, 1] or img[x, y, 0] is not img[x, y, 2]
+        #     if is_color:
+        #         break
+        # if is_color:
+        #     #     return img.astype('float'), True
+        #     # return img.astype('float'), False
+        #     return img.astype('float')
         return img.astype('float')
 
     # deprecated

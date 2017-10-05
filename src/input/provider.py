@@ -6,7 +6,7 @@ from src.input.util import Util
 
 class Provider:
     @staticmethod
-    def gray_gradient(size, min, max):
+    def gray_gradient(size=(256, 256), min=0, max=255):
         (width, height) = size
         img = np.zeros(size)
         for x in range(width):
@@ -15,7 +15,7 @@ class Provider:
         return img
 
     @staticmethod
-    def color_gradient(size):
+    def color_gradient(size=(256, 256)):
         (width, height) = size
         img = np.zeros((width, height, 3), dtype=np.short)
 
@@ -34,7 +34,7 @@ class Provider:
 
     @staticmethod
     def __get_rgb_p(C, X, H):
-        print(C, X, H)
+        # print(C, X, H)
         h = int(H / 60)
         if h == 0:
             return C, X, 0
@@ -59,7 +59,7 @@ class Provider:
         return [(Rp + m) * 255, (Gp + m) * 255, (Bp + m) * 255]
 
     @staticmethod
-    def draw_circle(size, radius):
+    def draw_circle(size=(256,256), radius=60):
         (width, height) = size
         circle = np.zeros((width, height, 3), dtype=np.short)
         center = (width / 2, height / 2)
@@ -71,7 +71,7 @@ class Provider:
         return circle
 
     @staticmethod
-    def draw_square(size, side):
+    def draw_square(size=(256,256), side=50):
         (width, height) = size
         square = np.zeros(size, dtype=np.short)
         center = (width / 2, height / 2)

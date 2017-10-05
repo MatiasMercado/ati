@@ -46,7 +46,6 @@ class ImageEditor(tk.Frame):
         self.b_average = tk.DoubleVar();
         self.selection_square = None;
         self.is_selected = False;
-        # selection_x1, y1, x2, y2
 
     def create_menu(self):
         root = self.master
@@ -54,13 +53,16 @@ class ImageEditor(tk.Frame):
         # Menu Bar
         menu_bar = tk.Menu(root)
         file_menu = tk.Menu(menu_bar, tearoff=0)
+        generate_menu = tk.Menu(menu_bar, tearoff=0)
+        operations_menu = tk.Menu(menu_bar, tearoff=0)
         transform_menu = tk.Menu(menu_bar, tearoff=0)
         noise_menu = tk.Menu(menu_bar, tearoff=0)
         filter_menu = tk.Menu(menu_bar, tearoff=0)
-        operations_menu = tk.Menu(menu_bar, tearoff=0)
+        borders_menu = tk.Menu(menu_bar, tearoff=0)
 
         # File Menu
         file_menu.add_command(label='Load', command=self.load_image)
+        file_menu.add_command(label='Load Color', command=self.load_color_image)
         file_menu.add_command(label='Edit', command=self.edit_image)
         file_menu.add_command(label='Save', command=self.save_image)
         file_menu.add_separator()
@@ -70,6 +72,13 @@ class ImageEditor(tk.Frame):
         file_menu.add_command(label='Quit', command=root.destroy)
         menu_bar.add_cascade(label='File', menu=file_menu)
 
+        # Generate Menu
+        generate_menu.add_command(label='Gray Gradient', command=self.sinthetic_image_builder(Provider.gray_gradient))
+        generate_menu.add_command(label='Color Gradient', command=self.sinthetic_image_builder(Provider.color_gradient))
+        generate_menu.add_command(label='Circle', command=self.sinthetic_image_builder(Provider.draw_circle))
+        generate_menu.add_command(label='Square', command=self.sinthetic_image_builder(Provider.draw_square))
+        menu_bar.add_cascade(label='Generate', menu=generate_menu)
+
         # Transform Menu
         transform_menu.add_command(label='Negative', command=self.negative)
         transform_menu.add_command(label='Contrast', command=self.contrast)
@@ -77,6 +86,8 @@ class ImageEditor(tk.Frame):
         transform_menu.add_command(label='Gamma', command=self.gamma_function)
         transform_menu.add_command(label='Binary', command=self.to_binary)
         transform_menu.add_command(label='Equalize', command=self.equalize)
+        transform_menu.add_command(label='Global Threshold', command=self.thresholdg)
+        transform_menu.add_command(label='Otsu Threshold', command=self.thresholdo)
         menu_bar.add_cascade(label='Transform', menu=transform_menu)
 
         # Operations Menu
@@ -99,9 +110,15 @@ class ImageEditor(tk.Frame):
         filter_menu.add_command(label='W. Median', command=self.w_median_filter)
         filter_menu.add_command(label='Gauss', command=self.gauss_filter)
         filter_menu.add_command(label='Borders', command=self.borders_filter)
-        filter_menu.add_command(label='GlobalThreshold', command=self.thresholdg)
-        filter_menu.add_command(label='OtsuThreshold', command=self.thresholdo)
+        filter_menu.add_command(label='Anisotropic', command=self.anisotropic_filter)
         menu_bar.add_cascade(label='Filter', menu=filter_menu)
+
+        # Borders Menu
+        borders_menu.add_command(label='Prewitt', command=self.directional_borders_prewitt)
+        borders_menu.add_command(label='Sobel', command=self.directional_borders_sobel)
+        borders_menu.add_command(label='Laplace', command=self.laplace_borders)
+        borders_menu.add_command(label='Gaussian Laplace', command=self.gaussian_laplace_borders)
+        menu_bar.add_cascade(label='Borders', menu=borders_menu)
 
         # Settings
         menu_bar.add_command(label='Settings', command=self.show_settings)
@@ -153,10 +170,14 @@ class ImageEditor(tk.Frame):
         # Filters
         self.mean_filter_size = tk.StringVar()
         self.mean_filter_size.set('3 3')
-        self.gauss_filter_size = tk.StringVar()
-        self.gauss_filter_size.set('3 3')
         self.gauss_filter_sigma = tk.DoubleVar()
-        self.gauss_filter_sigma.set(20)
+        self.gauss_filter_sigma.set(1)
+        self.anisotropic_iter = tk.IntVar()
+        self.anisotropic_iter.set(5)
+        self.anisotropic_m = tk.IntVar()
+        self.anisotropic_m.set(0)
+        self.anisotropic_sigma = tk.DoubleVar()
+        self.anisotropic_sigma.set(3)
 
         # Global Threshold
         self.threshold = tk.DoubleVar()
@@ -166,27 +187,31 @@ class ImageEditor(tk.Frame):
         self.deltaT = tk.DoubleVar()
         self.deltaT.set(200)
 
+        # Borders
+        self.gaussian_laplace_sigma = tk.DoubleVar()
+        self.gaussian_laplace_sigma.set(1)
+        self.borders_detectors_directions = tk.StringVar()
+        self.borders_detectors_directions.set('0 1 2 3')
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
-        self.settings_row = 0;
+        self.settings_row = 0
 
         def curr_row():
-            return self.settings_row;
+            return self.settings_row
 
         def next_row():
             self.settings_row = self.settings_row + 1
-            return self.settings_row;
+            return self.settings_row
 
         # Title
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=curr_row(), columnspan=2, sticky=(tk.W, tk.E))
         tk.Label(settings_frame, text='Settings').grid(row=curr_row(), columnspan=2)
 
         # Contrast
-        tk.Label(settings_frame, text='Contrast').grid(row=next_row(), column=0)
-        tk.Label(settings_frame, text='S1').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Contrast S1').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.s1, textvariable=self.s1).grid(row=curr_row(), column=1)
-        tk.Label(settings_frame, text='S2').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Contrast S2').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.s2, textvariable=self.s2).grid(row=curr_row(), column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
@@ -208,41 +233,37 @@ class ImageEditor(tk.Frame):
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         # Noise
-        tk.Label(settings_frame, text='Gauss Noise').grid(row=next_row(), column=0)
-        tk.Label(settings_frame, text='Deviation').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Gauss Noise Deviation').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.normal_sigma, textvariable=self.normal_sigma).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Gauss Noise Density').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.normal_prob, textvariable=self.normal_prob).grid(row=curr_row(), column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Rayleigh Noise').grid(row=next_row(), column=0)
-        tk.Label(settings_frame, text='Scale').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Rayleigh Noise Scale').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.rayleigh_scale, textvariable=self.rayleigh_scale).grid(row=curr_row(),
                                                                                                   column=1)
 
-        tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Rayleigh Noise Density').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.rayleigh_prob, textvariable=self.rayleigh_prob).grid(row=curr_row(),
                                                                                                 column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Exp Noise').grid(row=next_row(), column=0)
-        tk.Label(settings_frame, text='Scale').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Exp Noise Scale').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.exp_scale, textvariable=self.exp_scale).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Exp Noise Density').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.exp_prob, textvariable=self.exp_prob).grid(row=curr_row(), column=1)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
-        tk.Label(settings_frame, text='Salt Pepper Noise').grid(row=next_row(), column=0)
-        tk.Label(settings_frame, text='P0').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Salt Pepper Noise P0').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.salt_pepper_p0, textvariable=self.salt_pepper_p0).grid(row=curr_row(),
                                                                                                   column=1)
-        tk.Label(settings_frame, text='P1').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Salt Pepper Noise P1').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.salt_pepper_p1, textvariable=self.salt_pepper_p1).grid(row=curr_row(),
                                                                                                   column=1)
 
-        tk.Label(settings_frame, text='Density').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Salt Pepper Noise Density').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.salt_pepper_density, textvariable=self.salt_pepper_density).grid(
             row=curr_row(), column=1)
 
@@ -252,33 +273,47 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.mean_filter_size, textvariable=self.mean_filter_size).grid(row=curr_row(),
                                                                                                       column=1)
 
-        tk.Label(settings_frame, text='Gauss Filter Size').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.gauss_filter_size, textvariable=self.gauss_filter_size).grid(row=curr_row(),
-                                                                                                        column=1)
-
         tk.Label(settings_frame, text='Gauss Filter Deviation').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.gauss_filter_sigma, textvariable=self.gauss_filter_sigma).grid(
             row=curr_row(), column=1)
 
+        tk.Label(settings_frame, text='Anisotropic M').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.anisotropic_m, textvariable=self.anisotropic_m).grid(row=curr_row(),
+                                                                                                      column=1)
+        tk.Label(settings_frame, text='Anisotropic Tmax').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.anisotropic_iter, textvariable=self.anisotropic_iter).grid(row=curr_row(),
+                                                                                                      column=1)
+        tk.Label(settings_frame, text='Anisotropic Deviation').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.anisotropic_sigma, textvariable=self.anisotropic_sigma).grid(row=curr_row(),
+                                                                                                      column=1)
         # Global Threshold
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         tk.Label(settings_frame, text='Global Threshold').grid(row=next_row(), column=0)
-        tk.Label(settings_frame, text='Threshold').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.threshold, textvariable=self.threshold).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='Delta').grid(row=next_row(), column=0)
+        tk.Label(settings_frame, text='Global Threshold Delta').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.delta, textvariable=self.delta).grid(row=curr_row(), column=1)
 
-        tk.Label(settings_frame, text='DeltaT').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.deltaT, textvariable=self.deltaT).grid(row=curr_row(), column=1)
+        # tk.Label(settings_frame, text='Global Threshold DeltaT').grid(row=next_row(), column=0)
+        # tk.Entry(settings_frame, text=self.deltaT, textvariable=self.deltaT).grid(row=curr_row(), column=1)
+
+        # Border Detectors
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
+
+        tk.Label(settings_frame, text='Prewitt/Sobel Directions').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.borders_detectors_directions, textvariable=self.borders_detectors_directions)\
+            .grid(row=curr_row(), column=1)
+
+        tk.Label(settings_frame, text='Gaussian Laplace Deviation').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.gaussian_laplace_sigma, textvariable=self.gaussian_laplace_sigma).grid(row=curr_row(),
+                                                                                                        column=1)
+
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
 
         return settings_frame
-
-
 
     def show_settings(self):
         self.settings.grid()
@@ -288,12 +323,15 @@ class ImageEditor(tk.Frame):
         self.settings.grid_remove()
 
     # File Menu Functions
-    def load_image(self):
+    def load_image(self, color=False):
         img_path = tk.filedialog.askopenfilename(initialdir='../resources/test', title='Select Image')
         img_data = Util.load_image(img_path)
         title = img_path.split('/')
         title = title[len(title) - 1]
         self.create_new_image(img_data, title=title)
+
+    def load_color_image(self):
+        self.load_image(True)
 
     def save_image(self):
         self.wait_variable(self.active_window)
@@ -460,6 +498,13 @@ class ImageEditor(tk.Frame):
     def save_edition(self):
         self.create_new_image(self.edited_img_data)
 
+    # Generate Menu Functions
+    def sinthetic_image_builder(self, draw_function):
+        def draw():
+            image = draw_function()
+            self.create_new_image(image)
+        return draw
+
     # Transform Menu Functions
     def negative(self):
         self.wait_variable(self.active_window)
@@ -579,11 +624,21 @@ class ImageEditor(tk.Frame):
         self.create_new_image(transformed_img)
 
     def gauss_filter(self):
-        size = self.gauss_filter_size.get().split()
-        gauss_filter_size = (int(size[0]), int(size[1]))
+        # size = self.gauss_filter_size.get().split()
+        # gauss_filter_size = (int(size[0]), int(size[1]))
+        sigma = int(self.gauss_filter_sigma.get())
+        gauss_filter_size = (2*sigma+1, 2*sigma+1)
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.gauss_blur(image, gauss_filter_size, self.gauss_filter_sigma.get())
+
+        transformed_img = FilterProvider.gauss_blur(image, gauss_filter_size, sigma)
+        self.create_new_image(transformed_img)
+
+    def anisotropic_filter(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        transformed_img = FilterProvider.anisotropic_filter(
+            image, self.anisotropic_iter.get(), self.anisotropic_m.get(), self.anisotropic_sigma.get())
         self.create_new_image(transformed_img)
 
     def borders_filter(self):
@@ -592,11 +647,40 @@ class ImageEditor(tk.Frame):
         transformed_img = FilterProvider.pasa_altos(image)
         self.create_new_image(transformed_img)
 
+    # The arrow points to the negative numbers
+    # 0: DOWN, 1: DOWN-LEFT, 2: LEFT, 3: UP-LEFT
+    def directional_borders_prewitt(self, weighted=False):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        directions_str = self.borders_detectors_directions.get().split()
+        directions = []
+        for i in range(len(directions_str)):
+            directions.append(int(directions_str[i]))
+        transformed_img = FilterProvider.directional_border_detector(image, weighted, directions)
+        self.create_new_image(transformed_img)
+
+    def directional_borders_sobel(self):
+        self.directional_borders_prewitt(True)
+
+    def laplace_borders(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.laplacian_detector(image)
+        self.create_new_image(transformed_img)
+
+    def gaussian_laplace_borders(self):
+        self.wait_variable(self.active_window)
+        image = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.laplacian_gaussian_detector(image, self.gaussian_laplace_sigma.get())
+        self.create_new_image(transformed_img)
+
     def thresholdg(self):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
         ans=np.zeros(image.shape)
         t= BorderDetector.global_threshold(image,ans,self.threshold.get(),self.delta.get(),self.deltaT.get())
+        # Don't delete this print, it gives info. about the image
+        print('Global threshold: {}'.format(t))
         transformed_img = Util.to_binary(image, t)
         self.create_new_image(transformed_img)
 
@@ -604,6 +688,8 @@ class ImageEditor(tk.Frame):
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
         t=BorderDetector.otsu_threshold(image)
+        # Don't delete this print, it gives info. about the image
+        print('Otsu threshold: {}'.format(t))
         transformed_img =Util.to_binary(image, t)
         self.create_new_image(transformed_img)
 
@@ -621,5 +707,5 @@ class ImageEditor(tk.Frame):
 if __name__ == '__main__':
     app = ImageEditor()
     app.master.title('Image Editor')
-    app.master.geometry('500x530')
+    app.master.geometry('650x600')
     app.mainloop()

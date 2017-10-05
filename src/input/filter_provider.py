@@ -138,6 +138,7 @@ class FilterProvider:
                 else:
                     mask[x][y] = 0
         mask = FilterProvider.rotate_matrix(mask, direction)
+        print(mask)
         return FilterProvider.sliding_window(image, mask)
 
     @staticmethod
@@ -145,6 +146,17 @@ class FilterProvider:
         # copy = image.copy()
         ret = np.zeros(image.shape)
         for i in range(4):
+            ret = Util.element_wise_operation(ret, FilterProvider.border(
+                image, weighted=weighted, direction=i), merge_function)
+        return ret
+
+    @staticmethod
+    def directional_border_detector(image, weighted=False, directions=[0, 1, 2, 3],
+                               merge_function=lambda p1, p2: p1 if p1 > p2 else p2):
+        # copy = image.copy()
+        ret = np.zeros(image.shape)
+        for i in directions:
+            print(i)
             ret = Util.element_wise_operation(ret, FilterProvider.border(
                 image, weighted=weighted, direction=i), merge_function)
         return ret
@@ -189,7 +201,7 @@ class FilterProvider:
 
     @staticmethod
     def rotate_matrix(matrix, times=1):
-        print(matrix.shape)
+        # print(matrix.shape)
         for i in range(times):
             aux = matrix[0, 0]
             matrix[0, 0] = matrix[1, 0]
@@ -203,26 +215,27 @@ class FilterProvider:
         return matrix
 
     @staticmethod
-    def anisotropic_filter(image, t, m, sigma, independent_layer=False):
+    def anisotropic_filter(image, tmax, m, sigma, independent_layer=False):
         aux = image;
         # 0: Lorentz, # 1: Leclerc, 2: Isotropic
-        if m == LORENTZ_BORDER_DETECTOR :
+        if m == LORENTZ_BORDER_DETECTOR:
             g = FilterProvider.__lorentz
+            print('LORENTZ')
         elif m == LECLERC_BORDER_DETECTOR:
             g = FilterProvider.__leclerc
         else:
             g = FilterProvider.__isotropic
 
-        def anisotropic_single_filter(img, i, j, k, sigma, g=g):
+        def anisotropic_single_filter(img, i, j, k, t, g=g):
             height = img.shape[0]
             width = img.shape[1]
-            N = (img[i][j+1][k] - img[i][j][k]) if j+1<height else 0
-            S = (img[i][j-1][k] - img[i][j][k]) if j-1>=0 else 0
-            E = (img[i+1][j][k] - img[i][j][k]) if i+1<width else 0
-            W = (img[i-1][j][k] - img[i][j][k]) if i-1>=0 else 0
-            return img[i][j][k] + 0.25 * (N*g(N, sigma) + S*g(S, sigma) + E*g(E, sigma) + W*g(W, sigma))
+            N = (img[i][j+1][k] - img[i][j][k]) if j+1 < height else 0
+            S = (img[i][j-1][k] - img[i][j][k]) if j-1 >= 0 else 0
+            E = (img[i+1][j][k] - img[i][j][k]) if i+1 < width else 0
+            W = (img[i-1][j][k] - img[i][j][k]) if i-1 >= 0 else 0
+            return img[i][j][k] + 0.25 * (N*g(N, t) + S*g(S, t) + E*g(E, t) + W*g(W, t))
 
-        for i in range(t):
+        for j in range(tmax):
             aux = FilterProvider.__anisotropic_matrix_filter(aux, anisotropic_single_filter, sigma, independent_layer)
         return aux;
 
