@@ -11,7 +11,6 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import PIL
 import numpy as np
-import math
 
 
 class ImageEditor(tk.Frame):
@@ -281,13 +280,13 @@ class ImageEditor(tk.Frame):
 
         tk.Label(settings_frame, text='Anisotropic M').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.anisotropic_m, textvariable=self.anisotropic_m).grid(row=curr_row(),
-                                                                                                      column=1)
+                                                                                                column=1)
         tk.Label(settings_frame, text='Anisotropic Tmax').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.anisotropic_iter, textvariable=self.anisotropic_iter).grid(row=curr_row(),
                                                                                                       column=1)
         tk.Label(settings_frame, text='Anisotropic Deviation').grid(row=next_row(), column=0)
         tk.Entry(settings_frame, text=self.anisotropic_sigma, textvariable=self.anisotropic_sigma).grid(row=curr_row(),
-                                                                                                      column=1)
+                                                                                                        column=1)
         # Global Threshold
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
@@ -304,7 +303,7 @@ class ImageEditor(tk.Frame):
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=2, sticky=(tk.W, tk.E))
 
         tk.Label(settings_frame, text='Prewitt/Sobel Directions').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.borders_detectors_directions, textvariable=self.borders_detectors_directions)\
+        tk.Entry(settings_frame, text=self.borders_detectors_directions, textvariable=self.borders_detectors_directions) \
             .grid(row=curr_row(), column=1)
 
         tk.Label(settings_frame, text='Gaussian Laplace Deviation').grid(row=next_row(), column=0)
@@ -344,7 +343,8 @@ class ImageEditor(tk.Frame):
         img_path = tk.filedialog.asksaveasfilename(initialdir='../resources/test', title='Save Image')
         linear_image = Util.linear_transform(image)
         # TODO: Change this for a generic save method that checks on the img_path extension
-        Util.save_raw(linear_image, img_path)
+        color = False
+        Util.save(linear_image, img_path, color)
 
     def create_new_image(self, img_data, title='', color=False):
         linear_img = Util.linear_transform(img_data)
@@ -418,9 +418,9 @@ class ImageEditor(tk.Frame):
 
         self.coord_frame = tk.Frame(self)
         tk.Label(self.coord_frame, text='(x,y)').grid(row=curr_row(), column=0, columnspan=3)
-        tk.Entry(self.coord_frame, text=self.x_coord, textvariable=self.x_coord, width=5).grid(row=next_row(),column=0)
-        tk.Entry(self.coord_frame, text=self.y_coord, textvariable=self.y_coord, width=5).grid(row=curr_row(),column=1)
-        tk.Button(self.coord_frame, text='Set Value', command=self.__set_value).grid(row = curr_row(), column = 2, padx=10)
+        tk.Entry(self.coord_frame, text=self.x_coord, textvariable=self.x_coord, width=5).grid(row=next_row(), column=0)
+        tk.Entry(self.coord_frame, text=self.y_coord, textvariable=self.y_coord, width=5).grid(row=curr_row(), column=1)
+        tk.Button(self.coord_frame, text='Set Value', command=self.__set_value).grid(row=curr_row(), column=2, padx=10)
 
         tk.Label(self.coord_frame, text='(r,g,b)').grid(row=next_row(), column=0, columnspan=3)
         tk.Entry(self.coord_frame, text=self.r_value, textvariable=self.r_value, width=5).grid(row=next_row(), column=0)
@@ -428,14 +428,20 @@ class ImageEditor(tk.Frame):
         tk.Entry(self.coord_frame, text=self.b_value, textvariable=self.b_value, width=5).grid(row=curr_row(), column=2)
 
         tk.Label(self.coord_frame, text='Gray Level Average').grid(row=next_row(), column=0, columnspan=3)
-        tk.Label(self.coord_frame, text=self.r_average, textvariable=self.r_average, width=5).grid(row=next_row(), column=0)
-        tk.Label(self.coord_frame, text=self.g_average, textvariable=self.g_average, width=5).grid(row=curr_row(), column=1)
-        tk.Label(self.coord_frame, text=self.b_average, textvariable=self.b_average, width=5).grid(row=curr_row(), column=2)
+        tk.Label(self.coord_frame, text=self.r_average, textvariable=self.r_average, width=5).grid(row=next_row(),
+                                                                                                   column=0)
+        tk.Label(self.coord_frame, text=self.g_average, textvariable=self.g_average, width=5).grid(row=curr_row(),
+                                                                                                   column=1)
+        tk.Label(self.coord_frame, text=self.b_average, textvariable=self.b_average, width=5).grid(row=curr_row(),
+                                                                                                   column=2)
 
-        ttk.Separator(self.coord_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        ttk.Separator(self.coord_frame, orient=tk.HORIZONTAL).grid(row=next_row(), columnspan=3, sticky=(tk.W, tk.E),
+                                                                   pady=10)
 
-        tk.Button(self.coord_frame, text='Cancel', command=self.hide_edit_panel).grid(row=next_row(), column=0, columnspan=1, pady=10)
-        tk.Button(self.coord_frame, text='Save', command=self.save_edition).grid(row=curr_row(), column=2, columnspan=1, pady=10)
+        tk.Button(self.coord_frame, text='Cancel', command=self.hide_edit_panel).grid(row=next_row(), column=0,
+                                                                                      columnspan=1, pady=10)
+        tk.Button(self.coord_frame, text='Save', command=self.save_edition).grid(row=curr_row(), column=2, columnspan=1,
+                                                                                 pady=10)
 
         # TODO: return coord_frame and save it to hide it later (copy create_settings method)
         self.coord_frame.grid(row=0, column=0)
@@ -508,6 +514,7 @@ class ImageEditor(tk.Frame):
         def draw():
             image = draw_function()
             self.create_new_image(image)
+
         return draw
 
     # Transform Menu Functions
@@ -630,7 +637,7 @@ class ImageEditor(tk.Frame):
 
     def gauss_filter(self):
         sigma = int(self.gauss_filter_sigma.get())
-        gauss_filter_size = (2*sigma+1, 2*sigma+1)
+        gauss_filter_size = (2 * sigma + 1, 2 * sigma + 1)
         self.wait_variable(self.active_window)
         image, color = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.gauss_blur(image, gauss_filter_size, sigma, color)
@@ -680,20 +687,46 @@ class ImageEditor(tk.Frame):
     def thresholdg(self):
         self.wait_variable(self.active_window)
         image, color = self.open_images[self.active_window.get()]
-        ans=np.zeros(image.shape)
-        t= BorderDetector.global_threshold(image,ans,self.threshold.get(),self.delta.get(),self.deltaT.get())
         # Don't delete this print, it gives info. about the image
-        print('Global threshold: {}'.format(t))
-        transformed_img = Util.to_binary(image, t)
+        transformed_img = np.zeros(image.shape)
+        aux = []
+        (width, height, layers) = image.shape
+        for d in range(layers):
+            t = BorderDetector.global_threshold(image[:, :, d], self.threshold.get(), self.delta.get(),
+                                                self.deltaT.get())
+            print('Global threshold: {}'.format(t))
+            aux.append(Util.to_binary(image[:, :, d], t))
+
+        for x in range(width):
+            for y in range(height):
+                pixel = []
+                for d in range(layers):
+                    pixel.append(aux[d][x, y])
+                transformed_img[x, y] = pixel
         self.create_new_image(transformed_img)
 
     def thresholdo(self):
         self.wait_variable(self.active_window)
         image, color = self.open_images[self.active_window.get()]
-        t=BorderDetector.otsu_threshold(image)
-        # Don't delete this print, it gives info. about the image
-        print('Otsu threshold: {}'.format(t))
-        transformed_img =Util.to_binary(image, t)
+        transformed_img = np.zeros(image.shape)
+        aux = []
+        (width, height, layers) = image.shape
+        for d in range(layers):
+            t = BorderDetector.otsu_threshold(image)
+            print('Otsu threshold: {}'.format(t))
+            aux.append(Util.to_binary(image[:, :, d], t))
+
+        for x in range(width):
+            for y in range(height):
+                pixel = []
+                for d in range(layers):
+                    pixel.append(aux[d][x, y])
+                transformed_img[x, y] = pixel
+
+        # t = BorderDetector.otsu_threshold(image)
+        # # Don't delete this print, it gives info. about the image
+        # print('Otsu threshold: {}'.format(t))
+        # transformed_img = Util.to_binary(image, t)
         self.create_new_image(transformed_img)
 
     # Private Functions

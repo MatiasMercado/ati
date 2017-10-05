@@ -9,6 +9,7 @@ LORENTZ_BORDER_DETECTOR = 0
 LECLERC_BORDER_DETECTOR = 1
 ISOTROPIC_BORDER_DETECTOR = 2
 
+
 class FilterProvider:
     @staticmethod
     def blur(image, size,independent_layer):
@@ -139,7 +140,8 @@ class FilterProvider:
                     mask[x][y] = 0
         mask = FilterProvider.rotate_matrix(mask, direction)
         print(mask)
-        return FilterProvider.sliding_window(image, mask)
+        aux = FilterProvider.sliding_window(image, mask)
+        return Util.apply_to_matrix(aux, lambda p: np.abs(p))
 
     @staticmethod
     def four_directions_border(image, weighted=False, merge_function=lambda p1, p2: p1 if p1 > p2 else p2):
@@ -152,7 +154,7 @@ class FilterProvider:
 
     @staticmethod
     def directional_border_detector(image, weighted=False, directions=[0, 1, 2, 3],
-                               merge_function=lambda p1, p2: p1 if p1 > p2 else p2):
+                                    merge_function=lambda p1, p2: p1 if p1 > p2 else p2):
         # copy = image.copy()
         ret = np.zeros(image.shape)
         for i in directions:
@@ -160,44 +162,6 @@ class FilterProvider:
             ret = Util.element_wise_operation(ret, FilterProvider.border(
                 image, weighted=weighted, direction=i), merge_function)
         return ret
-
-    @staticmethod
-    def y_border(image, weighted=False):
-        mask = np.zeros((3, 3))
-        for x in range(3):
-            for y in range(3):
-                if x == 0:
-                    if y == 1 and weighted:
-                        mask[x][y] = 2
-                    else:
-                        mask[x][y] = 1
-                elif x == 2:
-                    if y == 1 and weighted:
-                        mask[x][y] = -2
-                    else:
-                        mask[x][y] = -1
-                else:
-                    mask[x][y] = 0
-        return FilterProvider.sliding_window(image, mask)
-
-    @staticmethod
-    def x_border(image, weighted=False):
-        mask = np.zeros((3, 3))
-        for x in range(3):
-            for y in range(3):
-                if y == 0:
-                    if x == 1 and weighted:
-                        mask[x][y] = 2
-                    else:
-                        mask[x][y] = 1
-                elif y == 2:
-                    if x == 1 and weighted:
-                        mask[x][y] = -2
-                    else:
-                        mask[x][y] = -1
-                else:
-                    mask[x][y] = 0
-        return FilterProvider.sliding_window(image, mask)
 
     @staticmethod
     def rotate_matrix(matrix, times=1):
@@ -216,7 +180,7 @@ class FilterProvider:
 
     @staticmethod
     def anisotropic_filter(image, tmax, m, sigma, independent_layer=False):
-        aux = image;
+        aux = image
         # 0: Lorentz, # 1: Leclerc, 2: Isotropic
         if m == LORENTZ_BORDER_DETECTOR:
             g = FilterProvider.__lorentz
@@ -229,27 +193,27 @@ class FilterProvider:
         def anisotropic_single_filter(img, i, j, k, t, g=g):
             height = img.shape[0]
             width = img.shape[1]
-            N = (img[i][j+1][k] - img[i][j][k]) if j+1 < height else 0
-            S = (img[i][j-1][k] - img[i][j][k]) if j-1 >= 0 else 0
-            E = (img[i+1][j][k] - img[i][j][k]) if i+1 < width else 0
-            W = (img[i-1][j][k] - img[i][j][k]) if i-1 >= 0 else 0
-            return img[i][j][k] + 0.25 * (N*g(N, t) + S*g(S, t) + E*g(E, t) + W*g(W, t))
+            N = (img[i][j + 1][k] - img[i][j][k]) if j + 1 < height else 0
+            S = (img[i][j - 1][k] - img[i][j][k]) if j - 1 >= 0 else 0
+            E = (img[i + 1][j][k] - img[i][j][k]) if i + 1 < width else 0
+            W = (img[i - 1][j][k] - img[i][j][k]) if i - 1 >= 0 else 0
+            return img[i][j][k] + 0.25 * (N * g(N, t) + S * g(S, t) + E * g(E, t) + W * g(W, t))
 
         for j in range(tmax):
             aux = FilterProvider.__anisotropic_matrix_filter(aux, anisotropic_single_filter, sigma, independent_layer)
-        return aux;
-
-    @staticmethod
-    def __lorentz(e, t):
-        return 1 /((e/t)**2 + 1)
+        return aux
 
     @staticmethod
     def __leclerc(e, t):
-        return np.exp(-(e/t)**2)
+        return np.exp(-((e / t) ** 2))
+
+    @staticmethod
+    def __lorentz(e, t):
+        return 1 / ((e / t) ** 2 + 1)
 
     @staticmethod
     def __isotropic(e, t):
-        return 1;
+        return 1
 
     @staticmethod
     def __anisotropic_matrix_filter(matrix, func, sigma, independent_layer=False):
@@ -264,7 +228,6 @@ class FilterProvider:
                     for k in range(matrix.shape[2]):
                         ans[i][j][k] = aux
         return ans
-
 
 # img = Util.load_raw('LENA.RAW')
 # img = FilterProvider.four_directions_border(img, merge_function=lambda p1, p2: p1 if p1 > p2 else p2)

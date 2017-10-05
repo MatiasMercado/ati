@@ -1,9 +1,8 @@
 import numpy as np
 
 from src.input.filter_provider import FilterProvider
-from src.input.util import Util
 from src.input.provider import Provider
-from matplotlib import pyplot as plt
+from src.input.util import Util
 
 DEFAULT_ZERO_DETECTOR_THRESHOLD = 5
 
@@ -71,59 +70,65 @@ class BorderDetector:
         return ans
 
     @staticmethod
-    def global_threshold(image,ans,threshold,delta,deltaT):
-        if(deltaT<delta):
+    def global_threshold(image, threshold, delta, deltaT):
+        if (deltaT < delta):
             return threshold
         else:
-            ans=Util.to_binary(image,threshold)
-            g1=0
-            g2=0
-            sumag1=0
-            sumag2=0
+            ans = Util.to_binary(image, threshold)
+            g1 = 0
+            g2 = 0
+            sumag1 = 0
+            sumag2 = 0
             for i in range(image.shape[0]):
                 for j in range(image.shape[1]):
-                    for k in range(image.shape[2]):
-                        if(ans[i][j][k]==0):
-                            g1+=1
-                            sumag1+=image[i][j][k]
-                        else:
-                            g2+=1
-                            sumag2+=image[i][j][k]
-            m1=(1/g1)*sumag1
-            m2=(1/g2)*sumag2
-            T=(0.5)*(m1+m2)
-            BorderDetector.global_threshold(image,ans, T, delta, abs(T-threshold))
+                    if ans[i][j] == 0:
+                        g1 += 1
+                        sumag1 += image[i][j]
+                    else:
+                        g2 += 1
+                        sumag2 += image[i][j]
+            m1 = (1 / g1) * sumag1
+            m2 = (1 / g2) * sumag2
+            T = 0.5 * (m1 + m2)
+            BorderDetector.global_threshold(image, T, delta, abs(T - threshold))
             return T
 
     @staticmethod
-    def otsu_variable(hist,N,t):
-        p1=0
-        for i in range(0,t+1):
-            p1=p1+hist[i]
-        mt=0
-        for i in range(0,t+1):
-            mt=mt+(hist[i]*i)
-        mg=0
-        for i in range(0,256):
-            mg=mg+(hist[i]*i)
-        var=((mg*p1-mt)**2)/(p1*(1-p1))
+    def otsu_variable(hist, t, mg):
+        p1 = 0
+        mt = 0
+        # for i in range(0, t + 1):
+        #     p1 = p1 + hist[i]
+        # for i in range(0, t + 1):
+        #     mt = mt + (hist[i] * i)
+        # for i in range(256):
+        #     mg = mg + (hist[i] * i)
+        #
+        for i in range(t + 1):
+            p1 = p1 + hist[i]
+            mt = mt + (hist[i] * i)
+
+        var = ((mg * p1 - mt) ** 2) / (p1 * (1 - p1))
         return var
 
     @staticmethod
     def otsu_threshold(image):
-        hist=Provider.histogram(image)
-        N=image.shape[0]*image.shape[1]
-        for i in range(0,256):
-            hist[i]=hist[i]/N
-        vars=[]
-        for i in range(0,256):
-            vars.append(BorderDetector.otsu_variable(hist,N,i))
+        hist = Provider.histogram(image)
+        N = image.shape[0] * image.shape[1]
+        mg = 0
+        for i in range(256):
+            hist[i] = hist[i] / N
+            mg = mg + (hist[i] * i)
+        vars = []
+        for t in range(256):
+            vars.append(BorderDetector.otsu_variable(hist, t, mg))
         for i in range(len(vars)):
-            if(vars[i]>255):
-                vars[i]=0
-        tmax=max(vars)
+            if vars[i] > 255:
+                vars[i] = 0
+        tmax = max(vars)
         # print(vars)
         return tmax
+
 
 '''
 img = Util.load_raw('LENA.RAW')
