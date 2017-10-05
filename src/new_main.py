@@ -11,7 +11,6 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import PIL
 import numpy as np
-import math
 
 
 class ImageEditor(tk.Frame):
@@ -339,7 +338,8 @@ class ImageEditor(tk.Frame):
         img_path = tk.filedialog.asksaveasfilename(initialdir='../resources/test', title='Save Image')
         linear_image = Util.linear_transform(image)
         # TODO: Change this for a generic save method that checks on the img_path extension
-        Util.save_raw(linear_image, img_path)
+        color = False
+        Util.save(linear_image, img_path, color)
 
     def create_new_image(self, img_data, title=''):
         linear_img = Util.linear_transform(img_data)

@@ -78,11 +78,14 @@ class Util:
         return Util.average(aux), count
 
     @staticmethod
-    def save(image, name):
-        image = Util.linear_transform(image)
-        image = image.astype('short')
-        img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
+    def save(image, name, color):
+        if color:
+            image = Util.linear_transform(image)
+            image = image.astype('short')
+            img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(name + ".pbm", img, (cv2.IMWRITE_PXM_BINARY, 0))
+        else:
+            Util.save_raw(image, name)
 
     @staticmethod
     def save_raw(image, name='../../resources/blur.raw'):

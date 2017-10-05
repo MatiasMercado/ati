@@ -80,13 +80,12 @@ class BorderDetector:
             sumag2 = 0
             for i in range(image.shape[0]):
                 for j in range(image.shape[1]):
-                    for k in range(image.shape[2]):
-                        if ans[i][j][k] == 0:
-                            g1 += 1
-                            sumag1 += image[i][j][k]
-                        else:
-                            g2 += 1
-                            sumag2 += image[i][j][k]
+                    if ans[i][j] == 0:
+                        g1 += 1
+                        sumag1 += image[i][j]
+                    else:
+                        g2 += 1
+                        sumag2 += image[i][j]
             m1 = (1 / g1) * sumag1
             m2 = (1 / g2) * sumag2
             T = 0.5 * (m1 + m2)
@@ -104,10 +103,9 @@ class BorderDetector:
         # for i in range(256):
         #     mg = mg + (hist[i] * i)
         #
-        for i in range(256):
-            if i <= t:
-                p1 = p1 + hist[i]
-                mt = mt + (hist[i] * i)
+        for i in range(t + 1):
+            p1 = p1 + hist[i]
+            mt = mt + (hist[i] * i)
 
         var = ((mg * p1 - mt) ** 2) / (p1 * (1 - p1))
         return var
