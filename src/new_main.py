@@ -53,6 +53,7 @@ class ImageEditor(tk.Frame):
         # Menu Bar
         menu_bar = tk.Menu(root)
         file_menu = tk.Menu(menu_bar, tearoff=0)
+        generate_menu = tk.Menu(menu_bar, tearoff=0)
         operations_menu = tk.Menu(menu_bar, tearoff=0)
         transform_menu = tk.Menu(menu_bar, tearoff=0)
         noise_menu = tk.Menu(menu_bar, tearoff=0)
@@ -70,6 +71,13 @@ class ImageEditor(tk.Frame):
         file_menu.add_separator()
         file_menu.add_command(label='Quit', command=root.destroy)
         menu_bar.add_cascade(label='File', menu=file_menu)
+
+        # Generate Menu
+        generate_menu.add_command(label='Gray Gradient', command=self.sinthetic_image_builder(Provider.gray_gradient))
+        generate_menu.add_command(label='Color Gradient', command=self.sinthetic_image_builder(Provider.color_gradient))
+        generate_menu.add_command(label='Circle', command=self.sinthetic_image_builder(Provider.draw_circle))
+        generate_menu.add_command(label='Square', command=self.sinthetic_image_builder(Provider.draw_square))
+        menu_bar.add_cascade(label='Generate', menu=generate_menu)
 
         # Transform Menu
         transform_menu.add_command(label='Negative', command=self.negative)
@@ -490,6 +498,13 @@ class ImageEditor(tk.Frame):
     def save_edition(self):
         self.create_new_image(self.edited_img_data)
 
+    # Generate Menu Functions
+    def sinthetic_image_builder(self, draw_function):
+        def draw():
+            image = draw_function()
+            self.create_new_image(image)
+        return draw
+
     # Transform Menu Functions
     def negative(self):
         self.wait_variable(self.active_window)
@@ -611,7 +626,7 @@ class ImageEditor(tk.Frame):
     def gauss_filter(self):
         # size = self.gauss_filter_size.get().split()
         # gauss_filter_size = (int(size[0]), int(size[1]))
-        sigma = self.gauss_filter_sigma.get()
+        sigma = int(self.gauss_filter_sigma.get())
         gauss_filter_size = (2*sigma+1, 2*sigma+1)
         self.wait_variable(self.active_window)
         image = self.open_images[self.active_window.get()]
