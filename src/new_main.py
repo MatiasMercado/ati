@@ -710,7 +710,7 @@ class ImageEditor(tk.Frame):
         aux = []
         (width, height, layers) = image.shape
         for d in range(layers):
-            t = BorderDetector.otsu_threshold(image)
+            t = BorderDetector.otsu_threshold(image[:, :, d])
             print('Otsu threshold: {}'.format(t))
             aux.append(Util.to_binary(image[:, :, d], t))
 
