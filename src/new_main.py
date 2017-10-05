@@ -190,6 +190,8 @@ class ImageEditor(tk.Frame):
         # Borders
         self.gaussian_laplace_sigma = tk.DoubleVar()
         self.gaussian_laplace_sigma.set(1)
+        self.laplace_threshold = tk.DoubleVar()
+        self.laplace_threshold.set(4)
         self.borders_detectors_directions = tk.StringVar()
         self.borders_detectors_directions.set('0 1 2 3')
 
@@ -309,6 +311,9 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.gaussian_laplace_sigma, textvariable=self.gaussian_laplace_sigma).grid(row=curr_row(),
                                                                                                         column=1)
 
+        tk.Label(settings_frame, text='Laplace Threshold').grid(row=next_row(), column=0)
+        tk.Entry(settings_frame, text=self.laplace_threshold, textvariable=self.laplace_threshold)\
+            .grid(row=curr_row(), column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
         tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
@@ -328,20 +333,20 @@ class ImageEditor(tk.Frame):
         img_data = Util.load_image(img_path)
         title = img_path.split('/')
         title = title[len(title) - 1]
-        self.create_new_image(img_data, title=title)
+        self.create_new_image(img_data, title, color)
 
     def load_color_image(self):
         self.load_image(True)
 
     def save_image(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         img_path = tk.filedialog.asksaveasfilename(initialdir='../resources/test', title='Save Image')
         linear_image = Util.linear_transform(image)
         # TODO: Change this for a generic save method that checks on the img_path extension
         Util.save_raw(linear_image, img_path)
 
-    def create_new_image(self, img_data, title=''):
+    def create_new_image(self, img_data, title='', color=False):
         linear_img = Util.linear_transform(img_data)
         pil_img = PIL.Image.fromarray(linear_img, 'RGB')
         tk_img = ImageTk.PhotoImage(pil_img)
@@ -366,7 +371,7 @@ class ImageEditor(tk.Frame):
         canvas.grid(row=0, column=0)
         canvas.create_image(0, 0, image=tk_img, anchor=tk.NW)
         canvas.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
-        self.open_images[new_window.title()] = img_data
+        self.open_images[new_window.title()] = img_data, color
 
     def set_active_window(self, event):
         self.active_window.set(event.widget.winfo_toplevel().title())
@@ -376,7 +381,7 @@ class ImageEditor(tk.Frame):
 
     def histogram(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         plt.hist(image.flatten(), bins='auto', normed=1)
         plt.show()
 
@@ -508,96 +513,96 @@ class ImageEditor(tk.Frame):
     # Transform Menu Functions
     def negative(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         transformed_img = Util.negative(image)
         self.create_new_image(transformed_img)
 
     def contrast(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = Util.contrast_increase(image, self.s1.get(), self.s2.get())
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = Util.contrast_increase(image, self.s1.get(), self.s2.get(), color)
         self.create_new_image(transformed_img)
 
     def dynamic_compression(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = Util.dynamic_range_compression(image)
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = Util.dynamic_range_compression(image, color)
 
         sad = transformed_img.flatten()
         self.create_new_image(transformed_img)
 
     def gamma_function(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = Util.gamma_power(image, self.gamma.get())
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = Util.gamma_power(image, self.gamma.get(), color)
         self.create_new_image(transformed_img)
 
     def equalize(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         transformed_img = Provider.equalize_histogram(image)
         self.create_new_image(transformed_img)
 
     def to_binary(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         transformed_img = Util.to_binary(image, self.binary_threshold.get())
         self.create_new_image(transformed_img)
 
     # Operations Functions
     def add(self):
         self.wait_variable(self.active_window)
-        image1 = self.open_images[self.active_window.get()]
+        image1, color = self.open_images[self.active_window.get()]
         self.wait_variable(self.active_window)
-        image2 = self.open_images[self.active_window.get()]
-        transformed_img = Util.sum(image1, image2)
+        image2, color = self.open_images[self.active_window.get()]
+        transformed_img = Util.sum(image1, image2, color)
         self.create_new_image(transformed_img)
 
     def difference(self):
         self.wait_variable(self.active_window)
-        image1 = self.open_images[self.active_window.get()]
+        image1, color = self.open_images[self.active_window.get()]
         self.wait_variable(self.active_window)
-        image2 = self.open_images[self.active_window.get()]
+        image2, color = self.open_images[self.active_window.get()]
         transformed_img = Util.difference(image1, image2)
         self.create_new_image(transformed_img)
 
     def multiply(self):
         self.wait_variable(self.active_window)
-        image1 = self.open_images[self.active_window.get()]
+        image1, color = self.open_images[self.active_window.get()]
         self.wait_variable(self.active_window)
-        image2 = self.open_images[self.active_window.get()]
-        transformed_img = Util.multiply(image1, image2)
+        image2, color = self.open_images[self.active_window.get()]
+        transformed_img = Util.multiply(image1, image2, color)
         self.create_new_image(transformed_img)
 
     def scalar_product(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         transformed_img = Util.scalar_prod(image, self.scalar.get())
         self.create_new_image(transformed_img)
 
     # Noise Functions
     def normal_noise(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_additive_noise_normal(image, self.normal_mu.get(), self.normal_sigma.get(),
-                                                         self.normal_prob.get())
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = Util.add_additive_noise_normal(image,
+            self.normal_mu.get(), self.normal_sigma.get(), self.normal_prob.get(), color)
         self.create_new_image(transformed_img)
 
     def rayleigh_noise(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_noise_rayleigh(image, self.rayleigh_scale.get(), self.rayleigh_prob.get())
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = Util.add_noise_rayleigh(image, self.rayleigh_scale.get(), self.rayleigh_prob.get(), color)
         self.create_new_image(transformed_img)
 
     def exp_noise(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = Util.add_noise_exponential(image, self.exp_scale.get(), self.exp_prob.get())
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = Util.add_noise_exponential(image, self.exp_scale.get(), self.exp_prob.get(), color)
         self.create_new_image(transformed_img)
 
     def salt_pepper_noise(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         transformed_img = Util.add_comino_and_sugar_noise(image, self.salt_pepper_p0.get(), self.salt_pepper_p1.get(),
                                                           self.salt_pepper_density.get())
         self.create_new_image(transformed_img)
@@ -607,43 +612,40 @@ class ImageEditor(tk.Frame):
         size = self.mean_filter_size.get().split()
         mean_filter_size = (int(size[0]), int(size[1]))
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.blur(image, mean_filter_size)
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = FilterProvider.blur(image, mean_filter_size, color)
         self.create_new_image(transformed_img)
 
     def median_filter(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.median_filter(image)
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = FilterProvider.median_filter(image, independent_layer=color)
         self.create_new_image(transformed_img)
 
     def w_median_filter(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = FilterProvider.median_filter(image, weighted=True)
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = FilterProvider.median_filter(image, weighted=True, independent_layer=color)
         self.create_new_image(transformed_img)
 
     def gauss_filter(self):
-        # size = self.gauss_filter_size.get().split()
-        # gauss_filter_size = (int(size[0]), int(size[1]))
         sigma = int(self.gauss_filter_sigma.get())
         gauss_filter_size = (2*sigma+1, 2*sigma+1)
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-
-        transformed_img = FilterProvider.gauss_blur(image, gauss_filter_size, sigma)
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = FilterProvider.gauss_blur(image, gauss_filter_size, sigma, color)
         self.create_new_image(transformed_img)
 
     def anisotropic_filter(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.anisotropic_filter(
-            image, self.anisotropic_iter.get(), self.anisotropic_m.get(), self.anisotropic_sigma.get())
+            image, self.anisotropic_iter.get(), self.anisotropic_m.get(), self.anisotropic_sigma.get(), color)
         self.create_new_image(transformed_img)
 
     def borders_filter(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.pasa_altos(image)
         self.create_new_image(transformed_img)
 
@@ -651,7 +653,7 @@ class ImageEditor(tk.Frame):
     # 0: DOWN, 1: DOWN-LEFT, 2: LEFT, 3: UP-LEFT
     def directional_borders_prewitt(self, weighted=False):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         directions_str = self.borders_detectors_directions.get().split()
         directions = []
         for i in range(len(directions_str)):
@@ -664,19 +666,20 @@ class ImageEditor(tk.Frame):
 
     def laplace_borders(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = BorderDetector.laplacian_detector(image)
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.laplacian_detector(image, self.laplace_threshold.get(), color)
         self.create_new_image(transformed_img)
 
     def gaussian_laplace_borders(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
-        transformed_img = BorderDetector.laplacian_gaussian_detector(image, self.gaussian_laplace_sigma.get())
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.laplacian_gaussian_detector(image,
+            self.gaussian_laplace_sigma.get(), self.laplace_threshold.get(), color)
         self.create_new_image(transformed_img)
 
     def thresholdg(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         ans=np.zeros(image.shape)
         t= BorderDetector.global_threshold(image,ans,self.threshold.get(),self.delta.get(),self.deltaT.get())
         # Don't delete this print, it gives info. about the image
@@ -686,7 +689,7 @@ class ImageEditor(tk.Frame):
 
     def thresholdo(self):
         self.wait_variable(self.active_window)
-        image = self.open_images[self.active_window.get()]
+        image, color = self.open_images[self.active_window.get()]
         t=BorderDetector.otsu_threshold(image)
         # Don't delete this print, it gives info. about the image
         print('Otsu threshold: {}'.format(t))

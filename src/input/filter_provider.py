@@ -11,13 +11,13 @@ ISOTROPIC_BORDER_DETECTOR = 2
 
 class FilterProvider:
     @staticmethod
-    def blur(image, size):
+    def blur(image, size,independent_layer):
         mask = np.zeros(size)
         mask = Util.apply_to_matrix(mask, lambda val: 1 / mask.flatten().size, two_dim=True)
-        return FilterProvider.sliding_window(image, mask)
+        return FilterProvider.sliding_window(image, mask, independent_layer)
 
     @staticmethod
-    def gauss_blur(image, size, sigma):
+    def gauss_blur(image, size, sigma, independent_layer):
         mask = np.zeros(size)
 
         def gauss_function(x, y):
@@ -30,7 +30,7 @@ class FilterProvider:
                 mask_index_j = j - int(mask.shape[1] / 2)  # Go from -cols/2 to +cols/2
                 mask[i][j] = gauss_function(mask_index_i, mask_index_j)
 
-        return FilterProvider.sliding_window(image, mask)
+        return FilterProvider.sliding_window(image, mask, independent_layer)
 
     @staticmethod
     def pasa_altos(image):

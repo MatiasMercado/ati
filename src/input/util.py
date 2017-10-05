@@ -176,7 +176,7 @@ class Util:
 
     # ONLY FOR 2D MATRIX
     @staticmethod
-    def dynamic_range_compression(image):
+    def dynamic_range_compression(image, independent_layer=False):
         R = image.max()
         c = 255 / np.math.log(1 + R)
 
@@ -187,11 +187,11 @@ class Util:
         def f(val):
             return c * np.math.log(1 + val)
 
-        return Util.apply_to_matrix(image, f, True)
+        return Util.apply_to_matrix(image, f, independent_layer)
 
     # ONLY FOR 2D MATRIX
     @staticmethod
-    def contrast_increase(image, s1, s2):
+    def contrast_increase(image, s1, s2, independent_layer=False):
         sigma = np.std(image.ravel())
         mean = image.mean()
         r1 = mean - sigma
@@ -216,7 +216,7 @@ class Util:
             else:
                 return m3 * val + b3
 
-        return Util.apply_to_matrix(image, f, True)
+        return Util.apply_to_matrix(image, f, independent_layer)
 
     @staticmethod
     def standard_deviation(matrix):
@@ -230,13 +230,13 @@ class Util:
         return np.sqrt(sigma / n)
 
     @staticmethod
-    def gamma_power(image, gamma):
+    def gamma_power(image, gamma, independent_layer):
         c = np.power(255, 1 - gamma)
 
         def f(val):
             return c * np.power(val, gamma)
 
-        return Util.apply_to_matrix(image, f, True)
+        return Util.apply_to_matrix(image, f, independent_layer)
 
         # @staticmethod
         # def gaussian_distr(x1, x2):

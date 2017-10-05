@@ -9,18 +9,19 @@ DEFAULT_ZERO_DETECTOR_THRESHOLD = 5
 
 
 class BorderDetector:
+
     @staticmethod
-    def laplacian_detector(image):
+    def laplacian_detector(image, threshold=4, independent_layer=False):
         mask = np.matrix([
             [0, -1, 0],
             [-1, 4, -1],
             [0, -1, 0]])
         aux_image = FilterProvider.sliding_window(image=image, mask=mask)
-        aux_image = BorderDetector.__zero_detector(aux_image, threshold=4)
+        aux_image = BorderDetector.__zero_detector(aux_image, independent_layer, threshold)
         return aux_image
 
     @staticmethod
-    def laplacian_gaussian_detector(image, sigma):
+    def laplacian_gaussian_detector(image, sigma, threshold, independent_layer=False):
 
         size = 7, 7
         mask = np.zeros(size)
@@ -37,7 +38,7 @@ class BorderDetector:
                 mask[i][j] = gauss_function(mask_index_i, mask_index_j)
 
         aux_image = FilterProvider.sliding_window(image=image, mask=mask)
-        aux_image = BorderDetector.__zero_detector(aux_image, threshold=4)
+        aux_image = BorderDetector.__zero_detector(aux_image, independent_layer, threshold)
 
         return aux_image
 
