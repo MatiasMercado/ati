@@ -153,10 +153,15 @@ class Util:
             return image
         for x in range(width):
             for y in range(height):
-                for z in range(3):
-                    ans[x][y][z] = (image[x][y][z] - min_val) * final_difference / (max_val - min_val) + final_min
-                    if (to_char):
-                        ans[x][y][z] = int(ans[x][y][z])
+                if len(image.shape) == 2:
+                    ans[x][y] = (image[x][y] - min_val) * final_difference / (max_val - min_val) + final_min
+                    if to_char:
+                        ans[x][y] = int(ans[x][y])
+                else:
+                    for z in range(3):
+                        ans[x][y][z] = (image[x][y][z] - min_val) * final_difference / (max_val - min_val) + final_min
+                        if to_char:
+                            ans[x][y][z] = int(ans[x][y][z])
         if (to_char):
             return ans.astype('B')
         return ans

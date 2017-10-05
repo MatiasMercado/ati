@@ -97,13 +97,6 @@ class BorderDetector:
     def otsu_variable(hist, t, mg):
         p1 = 0
         mt = 0
-        # for i in range(0, t + 1):
-        #     p1 = p1 + hist[i]
-        # for i in range(0, t + 1):
-        #     mt = mt + (hist[i] * i)
-        # for i in range(256):
-        #     mg = mg + (hist[i] * i)
-        #
         for i in range(t + 1):
             p1 = p1 + hist[i]
             mt = mt + (hist[i] * i)
@@ -122,12 +115,8 @@ class BorderDetector:
         vars = []
         for t in range(256):
             vars.append(BorderDetector.otsu_variable(hist, t, mg))
-        for i in range(len(vars)):
-            if vars[i] > 255:
-                vars[i] = 0
         tmax = max(vars)
-        # print(vars)
-        return tmax
+        return vars.index(tmax)
 
 
 '''
