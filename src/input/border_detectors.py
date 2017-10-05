@@ -15,7 +15,7 @@ class BorderDetector:
             [0, -1, 0],
             [-1, 4, -1],
             [0, -1, 0]])
-        aux_image = FilterProvider.sliding_window(image=image, mask=mask)
+        aux_image = FilterProvider.sliding_window(image=image, mask=mask, independent_layer=independent_layer)
         aux_image = BorderDetector.__zero_detector(aux_image, independent_layer, threshold)
         return aux_image
 
@@ -36,7 +36,7 @@ class BorderDetector:
                 mask_index_j = j - int(mask.shape[1] / 2)  # Go from -cols/2 to +cols/2
                 mask[i][j] = gauss_function(mask_index_i, mask_index_j)
 
-        aux_image = FilterProvider.sliding_window(image=image, mask=mask)
+        aux_image = FilterProvider.sliding_window(image=image, mask=mask, independent_layer=independent_layer)
         aux_image = BorderDetector.__zero_detector(aux_image, independent_layer, threshold)
 
         return aux_image

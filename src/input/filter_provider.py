@@ -12,7 +12,7 @@ ISOTROPIC_BORDER_DETECTOR = 2
 
 class FilterProvider:
     @staticmethod
-    def blur(image, size,independent_layer):
+    def blur(image, size, independent_layer):
         mask = np.zeros(size)
         mask = Util.apply_to_matrix(mask, lambda val: 1 / mask.flatten().size, two_dim=True)
         return FilterProvider.sliding_window(image, mask, independent_layer)
@@ -122,7 +122,7 @@ class FilterProvider:
         return ans
 
     @staticmethod
-    def border(image, weighted=False, direction=0):
+    def border(image, weighted=False, direction=0, independent_layer=False):
         mask = np.zeros((3, 3))
         for x in range(3):
             for y in range(3):
@@ -140,8 +140,8 @@ class FilterProvider:
                     mask[x][y] = 0
         mask = FilterProvider.rotate_matrix(mask, direction)
         print(mask)
-        aux = FilterProvider.sliding_window(image, mask)
-        return Util.apply_to_matrix(aux, lambda p: np.abs(p))
+        aux = FilterProvider.sliding_window(image, mask, independent_layer)
+        return Util.apply_to_matrix(aux, lambda p: np.abs(p), independent_layer)
 
     @staticmethod
     def four_directions_border(image, weighted=False, merge_function=lambda p1, p2: p1 if p1 > p2 else p2):
@@ -154,13 +154,13 @@ class FilterProvider:
 
     @staticmethod
     def directional_border_detector(image, weighted=False, directions=[0, 1, 2, 3],
-                                    merge_function=lambda p1, p2: p1 if p1 > p2 else p2):
+                                    merge_function=lambda p1, p2: p1 if p1 > p2 else p2, independent_layer=False):
         # copy = image.copy()
         ret = np.zeros(image.shape)
         for i in directions:
             print(i)
             ret = Util.element_wise_operation(ret, FilterProvider.border(
-                image, weighted=weighted, direction=i), merge_function)
+                image, weighted=weighted, direction=i, independent_layer=independent_layer), merge_function, independent_layer)
         return ret
 
     @staticmethod
@@ -193,9 +193,9 @@ class FilterProvider:
         def anisotropic_single_filter(img, i, j, k, t, g=g):
             height = img.shape[0]
             width = img.shape[1]
-            N = (img[i][j + 1][k] - img[i][j][k]) if j + 1 < height else 0
+            N = (img[i][j + 1][k] - img[i][j][k]) if j + 1 < width else 0
             S = (img[i][j - 1][k] - img[i][j][k]) if j - 1 >= 0 else 0
-            E = (img[i + 1][j][k] - img[i][j][k]) if i + 1 < width else 0
+            E = (img[i + 1][j][k] - img[i][j][k]) if i + 1 < height else 0
             W = (img[i - 1][j][k] - img[i][j][k]) if i - 1 >= 0 else 0
             return img[i][j][k] + 0.25 * (N * g(N, t) + S * g(S, t) + E * g(E, t) + W * g(W, t))
 

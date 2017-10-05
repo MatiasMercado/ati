@@ -61,6 +61,17 @@ class Util:
         return cv2.imread(path)[:, :, :]
 
     @staticmethod
+    def color_average(image, p1, p2, independent_layer=False):
+        r = Util.average(Util.trim(image[:,:,0], p1, p2))
+        if (independent_layer):
+            g = Util.average(Util.trim(image[:,:,1], p1, p2))
+            b = Util.average(Util.trim(image[:,:,2], p1, p2))
+        else:
+            g = r
+            b = r
+        return r, g, b
+
+    @staticmethod
     def trim(image, p1, p2):
         (x1, y1) = p1
         (x2, y2) = p2

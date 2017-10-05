@@ -482,7 +482,8 @@ class ImageEditor(tk.Frame):
                                                                         self.last_x, self.last_y, fill="#8E3840",
                                                                         width=0, stipple="gray50")
 
-        # print(Util.get_info(self.edited_img_data, (self.x_coord.get(), self.y_coord.get()), (self.last_x, self.last_y)))
+        # Util.color_average(self.edited_img_data, (self.x_coord.get(), self.y_coord.get()), (self.last_x, self.last_y))
+
         # TODO: Fix get_info method to work with 3D matrix. Show it's value on labels.
         # Maybe convert last_x and last_y to IntVar and show the values on screen to know where the average is
         # Add a button to save the selection
@@ -665,7 +666,8 @@ class ImageEditor(tk.Frame):
         directions = []
         for i in range(len(directions_str)):
             directions.append(int(directions_str[i]))
-        transformed_img = FilterProvider.directional_border_detector(image, weighted, directions)
+        transformed_img = FilterProvider.directional_border_detector(image, weighted, directions,
+                                                                     independent_layer=color)
         self.create_new_image(transformed_img)
 
     def directional_borders_sobel(self):
