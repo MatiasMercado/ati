@@ -94,7 +94,7 @@ class Util:
     @staticmethod
     def to_binary(image, threshold):
         vfunc = np.vectorize(lambda p: 255 if p > threshold else 0)
-        return vfunc(image)
+        return vfunc(image).astype('B')
 
     @staticmethod
     def scalar_prod(image, scalar):

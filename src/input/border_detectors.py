@@ -69,7 +69,7 @@ class BorderDetector:
         return ans
 
     @staticmethod
-    def global_threshold(image, ans, threshold, delta, deltaT):
+    def global_threshold(image, threshold, delta, deltaT):
         if (deltaT < delta):
             return threshold
         else:
@@ -89,7 +89,7 @@ class BorderDetector:
             m1 = (1 / g1) * sumag1
             m2 = (1 / g2) * sumag2
             T = 0.5 * (m1 + m2)
-            BorderDetector.global_threshold(image, ans, T, delta, abs(T - threshold))
+            BorderDetector.global_threshold(image, T, delta, abs(T - threshold))
             return T
 
     @staticmethod
