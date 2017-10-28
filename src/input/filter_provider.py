@@ -5,6 +5,24 @@ from src.input.util import Util
 WEIGHTED_MEDIAN_MASK = np.matrix([[1, 2, 1],
                                   [2, 4, 2],
                                   [1, 2, 1]])
+
+
+SUSAN_MASK = np.matrix([[0, 0, 1, 1, 1, 0, 0],
+                         [0, 1, 1, 1, 1, 1, 0],
+                         [1, 1, 1, 1, 1, 1, 1],
+                         [1, 1, 1, 1, 1, 1, 1],
+                         [1, 1, 1, 1, 1, 1, 1],
+                         [0, 1, 1, 1, 1, 1, 0],
+                         [0, 0, 1, 1, 1, 0, 0]])
+
+
+SUSAN_BORDER_DETECTOR = 0
+SUSAN_CORNER_DETECTOR = 1
+SUSAN_BORDER_CORNER_DETECTOR = 2
+SUSAN_MASK_SIZE = 37
+SUSAN_BORDER_POINT = 1
+SUSAN_CORNER_POINT = 2
+
 LORENTZ_BORDER_DETECTOR = 0
 LECLERC_BORDER_DETECTOR = 1
 ISOTROPIC_BORDER_DETECTOR = 2
@@ -107,6 +125,38 @@ class FilterProvider:
         return np.median(vec)
 
     @staticmethod
+    def __apply_mask_susan(image, center, mask, detector_type, delta):
+        (image_width, image_height) = image.shape
+        (center_x, center_y) = center
+        (mask_width, mask_height) = mask.shape
+        acu = 0
+        for x in range(mask_width):
+            image_x = center_x - int(mask_width / 2) + x
+            if image_x >= image_width:
+                image_x -= mask_width
+            elif image_x < 0:
+                image_x += mask_width
+            for y in range(mask_height):
+                image_y = center_y - int(mask_height / 2) + y
+                if image_y >= image_height:
+                    image_y -= mask_height
+                elif image_y < 0:
+                    image_y += mask_height
+                if mask[x, y] == 1 and np.abs(image[image_x][image_y] - image[center_x][center_y]) < 27:
+                    acu += 1
+        s = 1 - (acu / SUSAN_MASK_SIZE)
+        if 0.75 - delta <= s <= 0.75 + delta and \
+                (detector_type == SUSAN_CORNER_DETECTOR or
+                         detector_type == SUSAN_BORDER_CORNER_DETECTOR):
+            return SUSAN_CORNER_POINT
+        elif 0.5 - delta <= s <= 0.5 + delta and \
+                (detector_type == SUSAN_BORDER_DETECTOR or
+                         detector_type == SUSAN_BORDER_CORNER_DETECTOR):
+            return SUSAN_BORDER_POINT
+        else:
+            return 0
+
+    @staticmethod
     def sliding_window(image, mask, independent_layer=False, border_policy=0):
         ans = np.zeros(image.shape)
         (image_width, image_height) = image.shape[0], image.shape[1]
@@ -117,6 +167,24 @@ class FilterProvider:
                         ans[x, y, z] = FilterProvider.__apply_mask(image[:, :, z], (x, y), mask)
                 else:
                     aux = FilterProvider.__apply_mask(image[:, :, 0], (x, y), mask)
+                    for z in range(image.shape[2]):
+                        ans[x, y, z] = aux
+        return ans
+
+    @staticmethod
+    def susan_sliding_window(image, independent_layer=False, detector_type=SUSAN_CORNER_DETECTOR,
+                             delta=0.05):
+        mask = SUSAN_MASK
+        ans = np.zeros(image.shape)
+        (image_width, image_height) = image.shape[0], image.shape[1]
+        for x in range(image_width):
+            for y in range(image_height):
+                if independent_layer:
+                    for z in range(image.shape[2]):
+                        ans[x, y, z] = FilterProvider.__apply_mask_susan(image[:, :, z], (x, y), mask, detector_type,
+                                                                         delta)
+                else:
+                    aux = FilterProvider.__apply_mask_susan(image[:, :, 0], (x, y), mask, detector_type, delta)
                     for z in range(image.shape[2]):
                         ans[x, y, z] = aux
         return ans
@@ -139,7 +207,6 @@ class FilterProvider:
                 else:
                     mask[x][y] = 0
         mask = FilterProvider.rotate_matrix(mask, direction)
-        print(mask)
         aux = FilterProvider.sliding_window(image, mask, independent_layer)
         return Util.apply_to_matrix(aux, lambda p: np.abs(p), independent_layer)
 
@@ -165,7 +232,6 @@ class FilterProvider:
 
     @staticmethod
     def rotate_matrix(matrix, times=1):
-        # print(matrix.shape)
         for i in range(times):
             aux = matrix[0, 0]
             matrix[0, 0] = matrix[1, 0]
@@ -184,7 +250,6 @@ class FilterProvider:
         # 0: Lorentz, # 1: Leclerc, 2: Isotropic
         if m == LORENTZ_BORDER_DETECTOR:
             g = FilterProvider.__lorentz
-            print('LORENTZ')
         elif m == LECLERC_BORDER_DETECTOR:
             g = FilterProvider.__leclerc
         else:

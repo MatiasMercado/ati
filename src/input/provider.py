@@ -73,12 +73,13 @@ class Provider:
     @staticmethod
     def draw_square(size=(256,256), side=50):
         (width, height) = size
-        square = np.zeros(size, dtype=np.short)
+        square = np.zeros((width, height, 3), dtype=np.short)
         center = (width / 2, height / 2)
         for x in range(width):
             for y in range(height):
-                if DistanceUtil.chebyshev_distance_lower_than(center, (x, y), side):
-                    square[x, y] = 255
+                for z in range(3):
+                    if DistanceUtil.chebyshev_distance_lower_than(center, (x, y), side):
+                        square[x, y, z] = 255
         return square
 
     @staticmethod

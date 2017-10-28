@@ -4,8 +4,13 @@ from src.input.filter_provider import FilterProvider
 from src.input.provider import Provider
 from src.input.util import Util
 
-DEFAULT_ZERO_DETECTOR_THRESHOLD = 5
+SUSAN_BORDER_DETECTOR = 0
+SUSAN_CORNER_DETECTOR = 1
+SUSAN_BORDER_CORNER_DETECTOR = 2
+SUSAN_BORDER_POINT = 1
+SUSAN_CORNER_POINT = 2
 
+DEFAULT_ZERO_DETECTOR_THRESHOLD = 5
 
 class BorderDetector:
 
@@ -118,6 +123,23 @@ class BorderDetector:
         tmax = max(vars)
         return vars.index(tmax)
 
+    @staticmethod
+    def susan_border_detector(image, independent_layer=False, detector_type=SUSAN_BORDER_CORNER_DETECTOR,
+                              delta=0.1):
+        (image_width, image_height) = image.shape[0], image.shape[1]
+        ans = np.copy(image)
+        border_pixels = FilterProvider.susan_sliding_window(image, independent_layer, detector_type, delta)
+        for x in range(image_width):
+            for y in range(image_height):
+                if border_pixels[x, y, 0] == SUSAN_BORDER_POINT:
+                    ans[x, y, 0] = 0
+                    ans[x, y, 1] = 255
+                    ans[x, y, 2] = 0
+                elif border_pixels[x, y, 0] == SUSAN_CORNER_POINT:
+                    ans[x, y, 0] = 255
+                    ans[x, y, 1] = 0
+                    ans[x, y, 2] = 0
+        return ans
 
 '''
 img = Util.load_raw('LENA.RAW')

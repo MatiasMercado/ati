@@ -13,6 +13,10 @@ import PIL
 import numpy as np
 
 
+SUSAN_BORDER_DETECTOR = 0
+SUSAN_CORNER_DETECTOR = 1
+SUSAN_BORDER_CORNER_DETECTOR = 2
+
 class ImageEditor(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
@@ -117,6 +121,7 @@ class ImageEditor(tk.Frame):
         borders_menu.add_command(label='Sobel', command=self.directional_borders_sobel)
         borders_menu.add_command(label='Laplace', command=self.laplace_borders)
         borders_menu.add_command(label='Gaussian Laplace', command=self.gaussian_laplace_borders)
+        borders_menu.add_command(label='Susan', command=self.susan_border_detector)
         menu_bar.add_cascade(label='Borders', menu=borders_menu)
 
         # Settings
@@ -194,6 +199,12 @@ class ImageEditor(tk.Frame):
         self.borders_detectors_directions = tk.StringVar()
         self.borders_detectors_directions.set('0 1 2 3')
 
+        # Susan
+        self.susan_type = tk.IntVar()
+        self.susan_type.set(2)
+        self.susan_delta = tk.DoubleVar()
+        self.susan_delta.set(0.15)
+
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
         self.settings_row = 0
@@ -206,8 +217,8 @@ class ImageEditor(tk.Frame):
             return self.settings_row
 
         # Title
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=curr_row(), columnspan=2, sticky=(tk.W, tk.E))
-        tk.Label(settings_frame, text='Settings').grid(row=curr_row(), columnspan=2)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=curr_row(), columnspan=4, sticky=(tk.W, tk.E))
+        tk.Label(settings_frame, text='Settings').grid(row=curr_row(), columnspan=4)
 
         # Contrast
         tk.Label(settings_frame, text='Contrast S1').grid(row=next_row(), column=0)
@@ -314,8 +325,18 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.laplace_threshold, textvariable=self.laplace_threshold)\
             .grid(row=curr_row(), column=1)
 
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=2, sticky=(tk.W, tk.E))
-        tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=2, sticky=(tk.W, tk.E))
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=4, sticky=(tk.W, tk.E))
+        tk.Button(settings_frame, text='Return', command=self.hide_settings).grid(columnspan=4, sticky=(tk.W, tk.E))
+
+        ####  Column 3&4  ####
+        self.settings_row = 1
+
+        # Susan Detector
+        tk.Label(settings_frame, text='Susan Detector').grid(row=curr_row(), column=2)
+        tk.Entry(settings_frame, text=self.susan_type, textvariable=self.susan_type).grid(row=curr_row(), column=3)
+        tk.Label(settings_frame, text='Susan Delta').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.susan_delta, textvariable=self.susan_delta).grid(row=curr_row(), column=3)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2, sticky=(tk.W, tk.E))
 
         return settings_frame
 
@@ -684,6 +705,15 @@ class ImageEditor(tk.Frame):
         image, color = self.open_images[self.active_window.get()]
         transformed_img = BorderDetector.laplacian_gaussian_detector(image,
             self.gaussian_laplace_sigma.get(), self.laplace_threshold.get(), color)
+        self.create_new_image(transformed_img)
+
+    # 0: BORDER_DETECTOR, 1: CORNER_DETECTOR, 2: BORDER AND CORNER
+    def susan_border_detector(self):
+        self.wait_variable(self.active_window)
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.susan_border_detector(
+            image=image, independent_layer=color,
+            detector_type=self.susan_type.get(), delta=self.susan_delta.get())
         self.create_new_image(transformed_img)
 
     def thresholdg(self):
