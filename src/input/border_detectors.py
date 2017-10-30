@@ -1,8 +1,10 @@
 import numpy as np
+import math
 
 from src.input.filter_provider import FilterProvider
 from src.input.provider import Provider
 from src.input.util import Util
+
 
 SUSAN_BORDER_DETECTOR = 0
 SUSAN_CORNER_DETECTOR = 1
@@ -139,6 +141,103 @@ class BorderDetector:
                     ans[x, y, 0] = 255
                     ans[x, y, 1] = 0
                     ans[x, y, 2] = 0
+        return ans
+
+    @staticmethod
+    def prewitt_edge(image):
+        ans = np.zeros(image.shape)
+        fi=np.zeros(image.shape)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    if (i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1):
+                        dx = image[i - 1][j + 1][k] + image[i    ][j + 1][k] + image[i + 1][j + 1][k] - (image[i - 1][j - 1][k] + image[i    ][j - 1][k] + image[i + 1][j - 1][k])
+                        dy = image[i + 1][j - 1][k] + image[i + 1][j    ][k] + image[i + 1][j + 1][k] - (image[i - 1][j - 1][k] + image[i - 1][j    ][k] + image[i - 1][j + 1][k])
+                        ans[i][j][k]=math.sqrt(dx**2+dy**2)
+                        angle=math.degrees(math.atan2(dy,dx))
+                        if(angle<0):
+                            angle=angle+180
+                        if(angle<22.5 or angle>157.5):
+                            fi[i][j][k]=0
+                        elif(angle>22.5 and angle<67.5):
+                            fi[i][j][k] = 45
+                        elif (angle>67.5 and angle<112.5):
+                            fi[i][j][k] = 90
+                        elif (angle>112.5 and angle<157.5):
+                            fi[i][j][k] = 135
+        return (Util.linear_transform(ans),fi)
+
+    @staticmethod
+    def no_maximos(image,fi):
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    if (i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1):
+                        pix=image[i][j][k]
+                        if(fi[i][j][k]==0):
+                            if(image[i  ][j-1][k]> pix or image[i  ][j+1][k]> pix):
+                                image[i][j][k]=0
+                        elif (fi[i][j][k] == 45):
+                            if (image[i-1][j-1][k] > pix or image[i+1][j+1][k] > pix):
+                                image[i][j][k] = 0
+                        elif (fi[i][j][k] == 90):
+                            if (image[i - 1][j][k] > pix or image[i + 1][j][k] > pix):
+                                image[i][j][k] = 0
+                        elif (fi[i][j][k] == 135):
+                            if (image[i+1][j-1][k] > pix or image[i-1][j+1][k] > pix):
+                                image[i][j][k] = 0
+        return image
+
+    @staticmethod
+    def hysteresis(image, t1, t2):
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    if (i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1):
+                        if(image[i][j][k]<t1):
+                            image[i][j][k]=0
+                        elif(image[i][j][k]>t2):
+                            image[i][j][k]=255
+        return image
+
+    @staticmethod
+    def desv(image):
+        ac = 0
+        n = image.shape[0] * image.shape[1] * image.shape[2]
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    ac += image[i][j][k]
+        media = ac / n
+        ac = 0
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    ac += (image[i][j][k] - media) ** 2
+        desv = math.sqrt(ac / (n - 1))
+        return desv
+
+    @staticmethod
+    def canny_edges(sigma, sigma2, image, color):
+        gauss_filter_size1 = (2 * sigma + 1, 2 * sigma + 1)
+        aux = FilterProvider.gauss_blur(image, gauss_filter_size1, sigma, color)
+        (aux, fi) = BorderDetector.prewitt_edge(aux)
+        aux = BorderDetector.no_maximos(aux, fi)
+
+        gauss_filter_size2 = (2 * sigma2 + 1, 2 * sigma2 + 1)
+        aux1 = FilterProvider.gauss_blur(image, gauss_filter_size2, sigma2, color)
+        (aux1, fi) = BorderDetector.prewitt_edge(aux1)
+        aux1 = BorderDetector.no_maximos(aux1, fi)
+
+        t = BorderDetector.otsu_threshold(image)
+        desv = BorderDetector.desv(image)
+        aux= BorderDetector.hysteresis(aux,t-(desv/2),t+(desv/2))
+        aux1= BorderDetector.hysteresis(aux1,t-(desv/2),t+(desv/2))
+        ans =np.zeros(image.shape)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                for k in range(image.shape[2]):
+                    ans[i][j][k] = aux1[i][j][k]+aux[i][j][k]
         return ans
 
 '''

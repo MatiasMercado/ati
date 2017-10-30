@@ -122,6 +122,7 @@ class ImageEditor(tk.Frame):
         borders_menu.add_command(label='Laplace', command=self.laplace_borders)
         borders_menu.add_command(label='Gaussian Laplace', command=self.gaussian_laplace_borders)
         borders_menu.add_command(label='Susan', command=self.susan_border_detector)
+        borders_menu.add_command(label='Canny', command=self.canny_edges)
         menu_bar.add_cascade(label='Borders', menu=borders_menu)
 
         # Settings
@@ -204,6 +205,12 @@ class ImageEditor(tk.Frame):
         self.susan_type.set(2)
         self.susan_delta = tk.DoubleVar()
         self.susan_delta.set(0.15)
+
+        # Canny
+        self.canny_sigma1 = tk.IntVar()
+        self.canny_sigma1.set(2)
+        self.canny_sigma2 = tk.IntVar()
+        self.canny_sigma2.set(2)
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
@@ -336,6 +343,11 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.susan_type, textvariable=self.susan_type).grid(row=curr_row(), column=3)
         tk.Label(settings_frame, text='Susan Delta').grid(row=next_row(), column=2)
         tk.Entry(settings_frame, text=self.susan_delta, textvariable=self.susan_delta).grid(row=curr_row(), column=3)
+        # Canny
+        tk.Label(settings_frame, text='Canny Sigma 1').grid(row=curr_row(), column=2)
+        tk.Entry(settings_frame, text=self.canny_sigma1, textvariable=self.canny_sigma1).grid(row=curr_row(), column=3)
+        tk.Label(settings_frame, text='Canny Sigma 2').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.canny_sigma2, textvariable=self.canny_sigma2).grid(row=curr_row(), column=3)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2, sticky=(tk.W, tk.E))
 
         return settings_frame
@@ -714,6 +726,13 @@ class ImageEditor(tk.Frame):
         transformed_img = BorderDetector.susan_border_detector(
             image=image, independent_layer=color,
             detector_type=self.susan_type.get(), delta=self.susan_delta.get())
+        self.create_new_image(transformed_img)
+
+    def canny_edges(self):
+        self.wait_variable(self.active_window)
+        image, color = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.canny_edges(
+            self.canny_sigma1.get(), self.canny_sigma2.get(), image=image, color=color)
         self.create_new_image(transformed_img)
 
     def thresholdg(self):
