@@ -1,3 +1,5 @@
+from asyncio import Queue
+
 import numpy as np
 
 from src.input.filter_provider import FilterProvider
@@ -5,6 +7,11 @@ from src.input.provider import Provider
 from src.input.util import Util
 
 DEFAULT_ZERO_DETECTOR_THRESHOLD = 5
+
+IN = -3
+L_IN = -1
+L_OUT = 1
+OUT = 3
 
 
 class BorderDetector:
@@ -117,25 +124,343 @@ class BorderDetector:
         tmax = max(vars)
         return vars.index(tmax)
 
+    @staticmethod
+    def generate_active_contour_initial_state(image, rectangle):
+        v1, v2 = rectangle
+        x1, y1 = v1
+        x2, y2 = v2
 
-'''
-img = Util.load_raw('LENA.RAW')
-ans=np.zeros(img.shape)
-t=BorderDetector.global_threshold(img,ans,100,1,200)
-img= Util.to_binary(img,t)
-print(img)
-plt.imshow(img)
-plt.show()    
+        xi = min(x1, x2)
+        yi = min(y1, y2)
+        xf = max(x1, x2)
+        yf = max(y1, y2)
 
-img=Provider.histogram(img)
-print(img)
-plt.hist(img)
-plt.show()
+        (width, height, depth) = image.shape
 
-ans=np.zeros(img.shape)
-img = BorderDetector.global_threshold(img,ans,55,5,255)
-plt.imshow(img)
-plt.show()    '''
+        aux = np.full((width, height), OUT, dtype=int)
+        for x in range(width):
+            for y in range(height):
+                if xi < x < xf and yi < y < yf:
+                    aux[x, y] = IN
+                elif xi < x < xf:
+                    if y == yi or y == yf:
+                        aux[x, y] = L_IN
+                        # print('l_in')
+                    elif y == yi - 1 or y == yf + 1:
+                        aux[x, y] = L_OUT
+                        # print('l_out')
+                elif yi < y < yf:
+                    if x == xi or x == xf:
+                        aux[x, y] = L_IN
+                        # print('l_in')
+                    elif x == xi - 1 or x == xf + 1:
+                        aux[x, y] = L_OUT
+                        # print('l_out')
+        aux[xi, yi] = L_OUT
+        aux[xf, yi] = L_OUT
+        aux[xi, yf] = L_OUT
+        aux[xf, yf] = L_OUT
+        return aux
 
-# img = BorderDetector.laplacian_gaussian_detector(img, 0.7)
-# Util.save_raw(img, 'lena_laplacian_gaussian_border')
+    @staticmethod
+    def my_active_contour(image, initial_state, b_color, o_color, smooth=False):
+        (width, height, depth) = image.shape
+        print('shape:', image.shape)
+        initial_l_in = Queue(maxsize=0)
+        initial_l_out = Queue(maxsize=0)
+        l_in = Queue(maxsize=0)
+        l_out = Queue(maxsize=0)
+        final_l_in = []
+        final_l_out = []
+
+        def calculate_difference(p):
+            # print('calculate difference')
+            b_diff = (p[0] - b_color[0]) ** 2
+            b_diff += (p[1] - b_color[1]) ** 2
+            b_diff += (p[2] - b_color[2]) ** 2
+            o_diff = (p[0] - o_color[0]) ** 2
+            o_diff += (p[1] - o_color[1]) ** 2
+            o_diff += (p[2] - o_color[2]) ** 2
+            return b_diff - o_diff
+
+        def update_l_in_neighbors(p):
+            if p[0] + 1 < initial_state.shape[0] and (initial_state[p[0] + 1, p[1]] == IN):
+                initial_state[p[0] + 1, p[1]] = L_IN
+                initial_l_in.put_nowait((p[0] + 1, p[1]))
+            if p[0] - 1 >= 0 and (initial_state[p[0] - 1, p[1]] == IN):
+                initial_state[p[0] - 1, p[1]] = L_IN
+                initial_l_in.put_nowait((p[0] - 1, p[1]))
+            if p[1] + 1 < initial_state.shape[1] and (initial_state[p[0], p[1] + 1] == IN):
+                initial_state[p[0], p[1] + 1] = L_IN
+                initial_l_in.put_nowait((p[0], p[1] + 1))
+            if p[1] - 1 >= 0 and (initial_state[p[0], p[1] - 1] == IN):
+                initial_state[p[0], p[1] - 1] = L_IN
+                initial_l_in.put_nowait((p[0], p[1] - 1))
+
+        def update_l_out_neighbors(p):
+            if p[0] + 1 < initial_state.shape[0] and (initial_state[p[0] + 1, p[1]] == OUT):
+                initial_state[p[0] + 1, p[1]] = L_OUT
+                l_out.put_nowait((p[0] + 1, p[1]))
+            if p[0] - 1 >= 0 and (initial_state[p[0] - 1, p[1]] == OUT):
+                initial_state[p[0] - 1, p[1]] = L_OUT
+                l_out.put_nowait((p[0] - 1, p[1]))
+            if p[1] + 1 < initial_state.shape[1] and (initial_state[p[0], p[1] + 1] == OUT):
+                initial_state[p[0], p[1] + 1] = L_OUT
+                l_out.put_nowait((p[0], p[1] + 1))
+            if p[1] - 1 >= 0 and (initial_state[p[0], p[1] - 1] == OUT):
+                initial_state[p[0], p[1] - 1] = L_OUT
+                l_out.put_nowait((p[0], p[1] - 1))
+
+        def check_l_out_neighbors(p):
+            if p[0] + 1 < initial_state.shape[0] and initial_state[p[0] + 1, p[1]] == L_IN:
+                return True
+            if p[0] - 1 >= 0 and initial_state[p[0] - 1, p[1]] == L_IN:
+                return True
+            if p[1] + 1 < initial_state.shape[1] and initial_state[p[0], p[1] + 1] == L_IN:
+                return True
+            if p[1] - 1 >= 0 and initial_state[p[0], p[1] - 1] == L_IN:
+                return True
+            return False
+
+        def check_l_in_neighbors(p):
+            if p[0] + 1 < initial_state.shape[0] and initial_state[p[0] + 1, p[1]] == L_OUT:
+                return True
+            if p[0] - 1 >= 0 and initial_state[p[0] - 1, p[1]] == L_OUT:
+                return True
+            if p[1] + 1 < initial_state.shape[1] and initial_state[p[0], p[1] + 1] == L_OUT:
+                return True
+            if p[1] - 1 >= 0 and initial_state[p[0], p[1] - 1] == L_OUT:
+                return True
+            return False
+
+        for x in range(width):
+            for y in range(height):
+                if initial_state[x, y] == L_OUT:
+                    initial_l_out.put_nowait((x, y))
+                elif initial_state[x, y] == L_IN:
+                    initial_l_in.put_nowait((x, y))
+
+        while not initial_l_in.empty():
+            x = initial_l_in.get_nowait()
+            if calculate_difference(image[x[0], x[1]]) <= 0:
+                initial_l_out.put_nowait(x)
+                initial_state[x[0], x[1]] = L_OUT
+                update_l_in_neighbors(x)
+            else:
+                l_in.put_nowait(x)
+
+        while not initial_l_out.empty():
+            x = initial_l_out.get_nowait()
+            if check_l_out_neighbors(x):
+                l_out.put_nowait(x)
+            else:
+                initial_state[x[0], x[1]] = OUT
+
+        while not l_out.empty():
+            x = l_out.get_nowait()
+            if calculate_difference(image[x[0], x[1]]) > 0:
+                l_in.put_nowait(x)
+                initial_state[x[0], x[1]] = L_IN
+                update_l_out_neighbors(x)
+            else:
+                final_l_out.append(x)
+
+        while not l_in.empty():
+            x = l_in.get_nowait()
+            if check_l_in_neighbors(x):
+                final_l_in.append(x)
+            else:
+                initial_state[x[0], x[1]] = IN
+
+        if smooth:
+            initial_state = BorderDetector.__smooth_contours(initial_state, final_l_in, final_l_out)
+
+        return [initial_state, l_in, l_out]
+
+    @staticmethod
+    def __smooth_contours(state, l_in, l_out):
+        initial_state = FilterProvider.gauss_blur(state, (5, 5), 1, two_dim=True)
+
+        def check_gauss_l_in(p):
+            if p[0] + 1 < initial_state.shape[0] and initial_state[p[0] + 1, p[1]] >= 0:
+                return False
+            if p[0] - 1 >= 0 and initial_state[p[0] - 1, p[1]] >= 0:
+                return False
+            if p[1] + 1 < initial_state.shape[1] and initial_state[p[0], p[1] + 1] >= 0:
+                return False
+            if p[1] - 1 >= 0 and initial_state[p[0], p[1] - 1] >= 0:
+                return False
+            return True
+
+        def check_gauss_l_out(p):
+            if p[0] + 1 < initial_state.shape[0] and initial_state[p[0] + 1, p[1]] < 0:
+                return False
+            if p[0] - 1 >= 0 and initial_state[p[0] - 1, p[1]] < 0:
+                return False
+            if p[1] + 1 < initial_state.shape[1] and initial_state[p[0], p[1] + 1] < 0:
+                return False
+            if p[1] - 1 >= 0 and initial_state[p[0], p[1] - 1] < 0:
+                return False
+            return True
+
+        for x in l_out:
+            if initial_state[x[0], x[1]] < 0:
+                l_out.remove(x)
+                l_in.append(x)
+                initial_state[x[0], x[1]] = L_IN
+        for x in l_in:
+            if check_gauss_l_in(x):
+                l_in.remove(x)
+                initial_state[x[0], x[1]] = IN
+        for x in l_in:
+            if initial_state[x[0], x[1]] >= 0:
+                l_out.append(x)
+                l_in.remove(x)
+                initial_state[x[0], x[1]] = L_OUT
+        for x in l_out:
+            if check_gauss_l_out(x):
+                l_out.remove(x)
+                initial_state[x[0], x[1]] = OUT
+
+        return initial_state
+
+    @staticmethod
+    def active_contour(image, initial_state, b_color, o_color, smooth=False, max_iterations=1000):
+        (width, height, depth) = image.shape
+        print('shape:', image.shape)
+        l_in = []
+        l_out = []
+
+        def calculate_difference(p):
+            # print('calculate difference')
+            b_diff = (p[0] - b_color[0]) ** 2
+            b_diff += (p[1] - b_color[1]) ** 2
+            b_diff += (p[2] - b_color[2]) ** 2
+            o_diff = (p[0] - o_color[0]) ** 2
+            o_diff += (p[1] - o_color[1]) ** 2
+            o_diff += (p[2] - o_color[2]) ** 2
+            return b_diff - o_diff
+
+        def update_l_in(p):
+
+            n = initial_state[p[0] + 1, p[1]]
+            if p[0] + 1 < initial_state.shape[0] and (n == OUT or n == L_OUT):
+                return False
+            n = initial_state[p[0] - 1, p[1]]
+            if p[0] - 1 >= 0 and (n == OUT or n == L_OUT):
+                return False
+            n = initial_state[p[0], p[1] + 1]
+            if p[1] + 1 < initial_state.shape[1] and (n == OUT or n == L_OUT):
+                return False
+            n = initial_state[p[0], p[1] - 1]
+            if p[1] - 1 >= 0 and (n == OUT or n == L_OUT):
+                return False
+            return True
+
+        def update_l_out(p):
+            n = initial_state[p[0] + 1, p[1]]
+            if p[0] + 1 < initial_state.shape[0] and (n == IN or n == L_IN):
+                return False
+            n = initial_state[p[0] - 1, p[1]]
+            if p[0] - 1 >= 0 and (n == IN or n == L_IN):
+                return False
+            n = initial_state[p[0], p[1] + 1]
+            if p[1] + 1 < initial_state.shape[1] and (n == IN or n == L_IN):
+                return False
+            n = initial_state[p[0], p[1] - 1]
+            if p[1] - 1 >= 0 and (n == IN or n == L_IN):
+                return False
+            return True
+
+        def update_l_in_neighbors(p):
+            if p[0] + 1 < initial_state.shape[0] and (initial_state[p[0] + 1, p[1]] == IN):
+                initial_state[p[0] + 1, p[1]] = L_IN
+                l_in.append((p[0] + 1, p[1]))
+            if p[0] - 1 >= 0 and (initial_state[p[0] - 1, p[1]] == IN):
+                initial_state[p[0] - 1, p[1]] = L_IN
+                l_in.append((p[0] - 1, p[1]))
+            if p[1] + 1 < initial_state.shape[1] and (initial_state[p[0], p[1] + 1] == IN):
+                initial_state[p[0], p[1] + 1] = L_IN
+                l_in.append((p[0], p[1] + 1))
+            if p[1] - 1 >= 0 and (initial_state[p[0], p[1] - 1] == IN):
+                initial_state[p[0], p[1] - 1] = L_IN
+                l_in.append((p[0], p[1] - 1))
+
+        def update_l_out_neighbors(p):
+            if p[0] + 1 < initial_state.shape[0] and (initial_state[p[0] + 1, p[1]] == OUT):
+                initial_state[p[0] + 1, p[1]] = L_OUT
+                l_out.append((p[0] + 1, p[1]))
+            if p[0] - 1 >= 0 and (initial_state[p[0] - 1, p[1]] == OUT):
+                initial_state[p[0] - 1, p[1]] = L_OUT
+                l_out.append((p[0] - 1, p[1]))
+            if p[1] + 1 < initial_state.shape[1] and (initial_state[p[0], p[1] + 1] == OUT):
+                initial_state[p[0], p[1] + 1] = L_OUT
+                l_out.append((p[0], p[1] + 1))
+            if p[1] - 1 >= 0 and (initial_state[p[0], p[1] - 1] == OUT):
+                initial_state[p[0], p[1] - 1] = L_OUT
+                l_out.append((p[0], p[1] - 1))
+
+        for x in range(width):
+            for y in range(height):
+                if initial_state[x, y] == L_OUT:
+                    l_out.append((x, y))
+                elif initial_state[x, y] == L_IN:
+                    l_in.append((x, y))
+        i = 1
+        touched = True
+        while touched and i < max_iterations:
+            touched = False
+            print('it:', i)
+            i += 1
+            for x in l_out:
+                if calculate_difference(image[x[0], x[1]]) > 0:
+                    touched = True
+                    l_out.remove(x)
+                    l_in.append(x)
+                    initial_state[x[0], x[1]] = L_IN
+                    update_l_out_neighbors(x)
+            for x in l_in:
+                if update_l_in(x):
+                    initial_state[x[0], x[1]] = IN
+                    l_in.remove((x[0], x[1]))
+            for x in l_in:
+                if calculate_difference(image[x[0], x[1]]) <= 0:
+                    touched = True
+                    l_in.remove(x)
+                    l_out.append(x)
+                    update_l_in_neighbors(x)
+            for x in l_out:
+                if update_l_out(x):
+                    initial_state[x[0], x[1]] = OUT
+                    l_out.remove((x[0], x[1]))
+
+        if smooth:
+            initial_state = BorderDetector.__smooth_contours(initial_state, l_in, l_out)
+
+        return [initial_state, l_in, l_out]
+
+# img = Util.load_image('mate.jpg')
+# state = BorderDetector.generate_active_contour_initial_state(img, ((115, 155), (138, 165)))
+# state_mine = BorderDetector.generate_active_contour_initial_state(img, ((115, 155), (138, 165)))
+# start = time.time()
+# result, l_in, l_out = BorderDetector.active_contour(img, state, [255, 255, 255], [200, 87, 42], smooth=True)
+# end_original = time.time()
+# result_mine, l_in_mine, l_out_mine = BorderDetector.my_active_contour(img, state, [255, 255, 255], [200, 87, 42], smooth=True)
+# end_mine = time.time()
+# print('TIMES')
+# print('original algorithm:', end_original - start)
+# print('mine:', end_mine - end_original)
+# print('ratio:', (end_original - start) / (end_mine - end_original))
+#
+# result = Util.to_binary(result, 0)
+# result_min = Util.to_binary(result_mine, 0)
+#
+# for p in l_in:
+#     img[p[0], p[1]] = [255, 255, 45]
+#
+# img_to_save = Image.fromarray(result.astype(np.uint8))
+# img_to_save.save('active.png')
+# img_to_save = Image.fromarray(result_mine.astype(np.uint8))
+# img_to_save.save('active_mine.png')
+# img_to_save = Image.fromarray(img.astype(np.uint8))
+# img_to_save.save('on_image_active.png')

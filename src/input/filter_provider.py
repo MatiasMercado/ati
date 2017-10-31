@@ -18,7 +18,7 @@ class FilterProvider:
         return FilterProvider.sliding_window(image, mask)
 
     @staticmethod
-    def gauss_blur(image, size, sigma):
+    def gauss_blur(image, size, sigma, two_dim=False):
         mask = np.zeros(size)
 
         def gauss_function(x, y):
@@ -31,7 +31,7 @@ class FilterProvider:
                 mask_index_j = j - int(mask.shape[1] / 2)  # Go from -cols/2 to +cols/2
                 mask[i][j] = gauss_function(mask_index_i, mask_index_j)
 
-        return FilterProvider.sliding_window(image, mask)
+        return FilterProvider.sliding_window(image, mask, two_dim=two_dim)
 
     @staticmethod
     def pasa_altos(image):
@@ -107,18 +107,25 @@ class FilterProvider:
         return np.median(vec)
 
     @staticmethod
-    def sliding_window(image, mask, independent_layer=False, border_policy=0):
+    def sliding_window(image, mask, independent_layer=False, border_policy=0, two_dim=False, threads=1):
         ans = np.zeros(image.shape)
         (image_width, image_height) = image.shape[0], image.shape[1]
-        for x in range(image_width):
-            for y in range(image_height):
-                if independent_layer:
-                    for z in range(image.shape[2]):
-                        ans[x, y, z] = FilterProvider.__apply_mask(image[:, :, z], (x, y), mask)
-                else:
-                    aux = FilterProvider.__apply_mask(image[:, :, 0], (x, y), mask)
-                    for z in range(image.shape[2]):
-                        ans[x, y, z] = aux
+        if two_dim:
+            for x in range(image_width):
+                for y in range(image_height):
+                    ans[x, y] = FilterProvider.__apply_mask(image, (x, y), mask)
+        else:
+            if threads == 1:
+                for x in range(image_width):
+                    for y in range(image_height):
+                        if independent_layer:
+                            for z in range(image.shape[2]):
+                                ans[x, y, z] = FilterProvider.__apply_mask(image[:, :, z], (x, y), mask)
+                        else:
+                            aux = FilterProvider.__apply_mask(image[:, :, 0], (x, y), mask)
+                            for z in range(image.shape[2]):
+                                ans[x, y, z] = aux
+
         return ans
 
     @staticmethod
