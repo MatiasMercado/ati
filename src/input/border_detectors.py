@@ -232,8 +232,8 @@ class BorderDetector:
                                 image[i][j][k] = 0
         return image
 
-@staticmethod
-def hysteresis(image, t1, t2):
+    @staticmethod
+    def hysteresis(image, t1, t2):
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
