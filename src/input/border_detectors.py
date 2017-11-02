@@ -150,7 +150,7 @@ class BorderDetector:
         return ans
 
     @staticmethod
-    def hough_transform(image, theta_steps, p_steps, epsilon=0.9, number=False):
+    def hough_transform(image, theta_steps, p_steps, epsilon=0.9, number=True):
         (image_width, image_height) = image.shape[0], image.shape[1]
         D = max(image_width, image_height)
 

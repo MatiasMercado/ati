@@ -222,7 +222,7 @@ class ImageEditor(tk.Frame):
         self.hough_p_steps = tk.IntVar()
         self.hough_p_steps.set(20)
         self.hough_threshold = tk.DoubleVar()
-        self.hough_threshold.set(0.8)
+        self.hough_threshold.set(0.5)
 
         # Canny
         self.canny_sigma1 = tk.IntVar()
@@ -585,6 +585,10 @@ class ImageEditor(tk.Frame):
         self.g_value.set(self.edited_img_data[self.y_coord.get(), self.x_coord.get(), 1])
         self.b_value.set(self.edited_img_data[self.y_coord.get(), self.x_coord.get(), 2])
 
+    def __clear_selection_square(self):
+        self.is_selected = False
+        self.edited_img_canvas.delete(self.selection_square)
+
     def __range_selection(self, event):
         width = self.edited_img_data.shape[0]
         height = self.edited_img_data.shape[1]
@@ -848,7 +852,8 @@ class ImageEditor(tk.Frame):
         #         mini = (a,b)
         #     if a > maxi[0] or (a == maxi[0] and b > maxi[1]):
         #         maxi = (a, b)
-        canvas.create_line(mini[0], mini[1], maxi[0], maxi[1], fill='red', width=5)
+        canvas.create_line(mini[1], mini[0], maxi[1], maxi[0], fill='red', width=5)
+        # canvas.create_line(mini[0], mini[1], maxi[0], maxi[1], fill='red', width=5)
 
     def canny_edges(self):
         self.wait_variable(self.active_window)
@@ -870,6 +875,7 @@ class ImageEditor(tk.Frame):
         background_color = None
 
         def start_object_selection(event):
+            self.__pixel_selection(event)
             global start_point
             start_point = (event.y, event.x)
             print('object', event.y, event.x)
@@ -878,6 +884,7 @@ class ImageEditor(tk.Frame):
             canvas.bind('<ButtonRelease-1>', end_object_selection)
 
         def end_object_selection(event):
+            self.__clear_selection_square()
             global end_point
             global object_rectangle
             global start_point
@@ -905,11 +912,13 @@ class ImageEditor(tk.Frame):
             canvas.bind('<ButtonRelease-1>', end_background_selection)
 
         def start_background_selection(event):
+            self.__pixel_selection(event)
             global start_point
             start_point = (event.y, event.x)
             print('background', event.y, event.x)
 
         def end_background_selection(event):
+            self.__clear_selection_square()
             global start_point
             global end_point
             global background_color
@@ -944,9 +953,16 @@ class ImageEditor(tk.Frame):
                 BorderDetector.active_contour_sequence(images, initial_state, background_color, object_color,
                                                        algorithm=1), color=True, play=True)
 
+        def set_edited_image(img_data, canvas):
+            self.edited_img = canvas.my_image
+            self.edited_img_data = np.copy(img_data).astype(float)
+            self.edited_img_canvas = canvas
+
         images, color, canvas = self.open_images[self.active_window.get()]
         image = images[0]
+        set_edited_image(image, canvas)
         canvas.bind('<ButtonPress-1>', start_object_selection)
+        canvas.bind("<B1-Motion>", self.__range_selection)
         canvas.bind('<ButtonRelease-1>', end_object_selection)
 
         print('active contours end')
