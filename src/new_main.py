@@ -1,3 +1,6 @@
+import threading
+import time
+
 import matplotlib
 import math
 
@@ -12,17 +15,20 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import PIL
 import numpy as np
-
+import os
 
 SUSAN_BORDER_DETECTOR = 0
 SUSAN_CORNER_DETECTOR = 1
 SUSAN_BORDER_CORNER_DETECTOR = 2
+
 
 class ImageEditor(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
 
         # Make the root window and the main frame responsive to resize
+        self.changed = False
+        self.test = 56
         self.grid(sticky=tk.N + tk.S + tk.E + tk.W)
         top = self.winfo_toplevel()
         top.rowconfigure(0, weight=1)
@@ -40,16 +46,16 @@ class ImageEditor(tk.Frame):
         self.image_number = 1
         self.open_images = {}
 
-        self.x_coord = tk.IntVar();
-        self.y_coord = tk.IntVar();
-        self.r_value = tk.DoubleVar();
-        self.g_value = tk.DoubleVar();
-        self.b_value = tk.DoubleVar();
-        self.r_average = tk.DoubleVar();
-        self.g_average = tk.DoubleVar();
-        self.b_average = tk.DoubleVar();
-        self.selection_square = None;
-        self.is_selected = False;
+        self.x_coord = tk.IntVar()
+        self.y_coord = tk.IntVar()
+        self.r_value = tk.DoubleVar()
+        self.g_value = tk.DoubleVar()
+        self.b_value = tk.DoubleVar()
+        self.r_average = tk.DoubleVar()
+        self.g_average = tk.DoubleVar()
+        self.b_average = tk.DoubleVar()
+        self.selection_square = None
+        self.is_selected = False
 
     def create_menu(self):
         root = self.master
@@ -67,6 +73,7 @@ class ImageEditor(tk.Frame):
         # File Menu
         file_menu.add_command(label='Load', command=self.load_image)
         file_menu.add_command(label='Load Color', command=self.load_color_image)
+        file_menu.add_command(label='Load Sequence', command=self.load_sequence)
         file_menu.add_command(label='Edit', command=self.edit_image)
         file_menu.add_command(label='Save', command=self.save_image)
         file_menu.add_separator()
@@ -124,6 +131,8 @@ class ImageEditor(tk.Frame):
         borders_menu.add_command(label='Gaussian Laplace', command=self.gaussian_laplace_borders)
         borders_menu.add_command(label='Susan', command=self.susan_border_detector)
         borders_menu.add_command(label='Hough', command=self.hough_transform)
+        borders_menu.add_command(label='Canny', command=self.canny_edges)
+        borders_menu.add_command(label='Active Contours', command=self.active_contours)
         menu_bar.add_cascade(label='Borders', menu=borders_menu)
 
         # Settings
@@ -214,6 +223,12 @@ class ImageEditor(tk.Frame):
         self.hough_p_steps.set(20)
         self.hough_threshold = tk.DoubleVar()
         self.hough_threshold.set(0.8)
+
+        # Canny
+        self.canny_sigma1 = tk.IntVar()
+        self.canny_sigma1.set(2)
+        self.canny_sigma2 = tk.IntVar()
+        self.canny_sigma2.set(2)
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
@@ -328,11 +343,12 @@ class ImageEditor(tk.Frame):
             .grid(row=curr_row(), column=1)
 
         tk.Label(settings_frame, text='Gaussian Laplace Deviation').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.gaussian_laplace_sigma, textvariable=self.gaussian_laplace_sigma).grid(row=curr_row(),
-                                                                                                        column=1)
+        tk.Entry(settings_frame, text=self.gaussian_laplace_sigma, textvariable=self.gaussian_laplace_sigma).grid(
+            row=curr_row(),
+            column=1)
 
         tk.Label(settings_frame, text='Laplace Threshold').grid(row=next_row(), column=0)
-        tk.Entry(settings_frame, text=self.laplace_threshold, textvariable=self.laplace_threshold)\
+        tk.Entry(settings_frame, text=self.laplace_threshold, textvariable=self.laplace_threshold) \
             .grid(row=curr_row(), column=1)
 
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(columnspan=4, sticky=(tk.W, tk.E))
@@ -343,21 +359,32 @@ class ImageEditor(tk.Frame):
 
         # Susan Detector
         tk.Label(settings_frame, text='Susan Detector').grid(row=curr_row(), column=2)
-        tk.Entry(settings_frame, text=self.susan_type, textvariable=self.susan_type).grid(row=curr_row(), column=3)
+        tk.Entry(settings_frame, text=self.susan_type, textvariable=self.susan_type).grid(row=curr_row(),
+                                                                                          column=3)
         tk.Label(settings_frame, text='Susan Delta').grid(row=next_row(), column=2)
-        tk.Entry(settings_frame, text=self.susan_delta, textvariable=self.susan_delta).grid(row=curr_row(), column=3)
-        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2, sticky=(tk.W, tk.E))
-
-        tk.Label(settings_frame, text='Hough Theta Steps').grid(row=next_row(), column=2)
-        tk.Entry(settings_frame, text=self.hough_theta_steps, textvariable=self.hough_theta_steps).grid(row=curr_row(), column=3)
-        tk.Label(settings_frame, text='Hough P Steps').grid(row=next_row(), column=2)
-        tk.Entry(settings_frame, text=self.hough_p_steps, textvariable=self.hough_p_steps).grid(row=curr_row(), column=3)
-        tk.Label(settings_frame, text='Hough Threshold').grid(row=next_row(), column=2)
-        tk.Entry(settings_frame, text=self.hough_threshold, textvariable=self.hough_threshold).grid(row=curr_row(), column=3)
-
+        tk.Entry(settings_frame, text=self.susan_delta, textvariable=self.susan_delta).grid(row=curr_row(),
+                                                                                            column=3)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2,
                                                                  sticky=(tk.W, tk.E))
-
+        # Hough
+        tk.Label(settings_frame, text='Hough Theta Steps').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.hough_theta_steps, textvariable=self.hough_theta_steps).grid(row=curr_row(),
+                                                                                                        column=3)
+        tk.Label(settings_frame, text='Hough P Steps').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.hough_p_steps, textvariable=self.hough_p_steps).grid(row=curr_row(),
+                                                                                                column=3)
+        tk.Label(settings_frame, text='Hough Threshold').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.hough_threshold, textvariable=self.hough_threshold).grid(row=curr_row(),
+                                                                                                    column=3)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2,
+                                                                 sticky=(tk.W, tk.E))
+        # Canny
+        tk.Label(settings_frame, text='Canny Sigma 1').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.canny_sigma1, textvariable=self.canny_sigma1).grid(row=curr_row(), column=3)
+        tk.Label(settings_frame, text='Canny Sigma 2').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.canny_sigma2, textvariable=self.canny_sigma2).grid(row=curr_row(), column=3)
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2,
+                                                                 sticky=(tk.W, tk.E))
         return settings_frame
 
     def show_settings(self):
@@ -378,6 +405,16 @@ class ImageEditor(tk.Frame):
     def load_color_image(self):
         self.load_image(True)
 
+    def load_sequence(self):
+        directory_path = tk.filedialog.askdirectory()
+        directory = os.fsencode(directory_path)
+        images = []
+        for file in os.listdir(directory):
+            filename = os.fsdecode(file)
+            if not filename.startswith('.'):
+                images.append(Util.load_image(directory_path + '/' + filename))
+        self.create_new_video(images, directory_path, color=True)
+
     def save_image(self):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]
@@ -397,7 +434,6 @@ class ImageEditor(tk.Frame):
         width = img_data.shape[1]
 
         new_window = tk.Toplevel()
-
         new_window.geometry('{}x{}'.format(width, height))
         new_window.resizable(width=False, height=False)
         if title.__len__() == 0:
@@ -414,6 +450,54 @@ class ImageEditor(tk.Frame):
         canvas.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
         self.open_images[new_window.title()] = img_data, color, canvas
         return self.open_images[new_window.title()]
+
+    def create_new_video(self, img_data_array, title='', color=False, play=False):
+        linear_img_array = []
+        for img_data in img_data_array:
+            linear_img_array.append(Util.linear_transform(img_data))
+
+        tk_img_array = []
+        for linear_img in linear_img_array:
+            pil_img = PIL.Image.fromarray(linear_img, 'RGB')
+            tk_img_array.append(ImageTk.PhotoImage(pil_img))
+
+        # Matrix shape is (height, width, 3)
+        height = img_data_array[0].shape[0]
+        width = img_data_array[0].shape[1]
+
+        new_window = tk.Toplevel()
+        new_window.geometry('{}x{}'.format(width, height))
+        new_window.resizable(width=False, height=False)
+        if title.__len__() == 0:
+            new_window.title('Image {}'.format(self.image_number))
+        else:
+            new_window.title('{} {}'.format(title, self.image_number))
+        new_window.bind('<ButtonRelease-1>', self.set_active_window)
+        new_window.bind('<Destroy>', self.remove_open_image)
+
+        self.image_number += 1
+        canvas = tk.Canvas(new_window, width=width, height=height, borderwidth=0, highlightthickness=0)
+        canvas.grid(row=0, column=0)
+        canvas.create_image(0, 0, image=tk_img_array[0], anchor=tk.NW)
+        canvas.my_image = tk_img_array[0]  # Used only to prevent image being destroy by garbage collector
+
+        self.open_images[new_window.title()] = img_data_array, color, canvas
+        if play:
+            class CanvasRefresher(threading.Thread):
+                def __init__(self, video_canvas, video_images):
+                    threading.Thread.__init__(self)
+                    self.canvas = video_canvas
+                    self.images = video_images
+
+                def run(self):
+                    while 1:
+                        for frame in self.images:
+                            time.sleep(1)
+                            self.canvas.create_image(0, 0, image=frame, anchor=tk.NW)
+                            self.canvas.my_image = frame
+
+            thread1 = CanvasRefresher(canvas, tk_img_array)
+            thread1.start()
 
     def set_active_window(self, event):
         self.active_window.set(event.widget.winfo_toplevel().title())
@@ -447,7 +531,7 @@ class ImageEditor(tk.Frame):
         height = img_data.shape[0]
         width = img_data.shape[1]
 
-        root = self.master;
+        root = self.master
         canvas = tk.Canvas(root, width=width, height=height, borderwidth=0, highlightthickness=0)
         canvas.grid(row=curr_row(), column=1)
         canvas.create_image(0, 0, image=tk_img, anchor=tk.NW)
@@ -502,20 +586,20 @@ class ImageEditor(tk.Frame):
         self.b_value.set(self.edited_img_data[self.y_coord.get(), self.x_coord.get(), 2])
 
     def __range_selection(self, event):
-        width = self.edited_img_data.shape[0];
-        height = self.edited_img_data.shape[1];
+        width = self.edited_img_data.shape[0]
+        height = self.edited_img_data.shape[1]
         self.is_selected = True
         self.last_x = event.x
         self.last_y = event.y
 
         # Fix the last point of the square to be inside the image
-        if self.last_x > width:
-            self.last_x = width
+        if self.last_x >= width:
+            self.last_x = width - 1
         elif self.last_x < 0:
             self.last_x = 0
 
-        if self.last_y > height:
-            self.last_y = height
+        if self.last_y >= height:
+            self.last_y = height - 1
         elif self.last_y < 0:
             self.last_y = 0
 
@@ -635,7 +719,8 @@ class ImageEditor(tk.Frame):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.add_additive_noise_normal(image,
-            self.normal_mu.get(), self.normal_sigma.get(), self.normal_prob.get(), color)
+                                                         self.normal_mu.get(), self.normal_sigma.get(),
+                                                         self.normal_prob.get(), color)
         self.create_new_image(transformed_img)
 
     def rayleigh_noise(self):
@@ -725,7 +810,8 @@ class ImageEditor(tk.Frame):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = BorderDetector.laplacian_gaussian_detector(image,
-            self.gaussian_laplace_sigma.get(), self.laplace_threshold.get(), color)
+                                                                     self.gaussian_laplace_sigma.get(),
+                                                                     self.laplace_threshold.get(), color)
         self.create_new_image(transformed_img)
 
     # 0: BORDER_DETECTOR, 1: CORNER_DETECTOR, 2: BORDER AND CORNER
@@ -764,6 +850,107 @@ class ImageEditor(tk.Frame):
         #         maxi = (a, b)
         canvas.create_line(mini[0], mini[1], maxi[0], maxi[1], fill='red', width=5)
 
+    def canny_edges(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        transformed_img = BorderDetector.canny_edges(
+            self.canny_sigma1.get(), self.canny_sigma2.get(), image=image, color=color)
+        self.create_new_image(transformed_img)
+
+    # todo
+    def active_contours(self):
+        print('active contours')
+        self.wait_variable(self.active_window)
+        print('window found')
+
+        start_point = None
+        end_point = None
+        object_rectangle = None
+        object_color = None
+        background_color = None
+
+        def start_object_selection(event):
+            global start_point
+            start_point = (event.y, event.x)
+            print('object', event.y, event.x)
+            print('find me', self.test)
+            canvas.bind('<ButtonPress-1>', start_object_selection)
+            canvas.bind('<ButtonRelease-1>', end_object_selection)
+
+        def end_object_selection(event):
+            global end_point
+            global object_rectangle
+            global start_point
+            global object_color
+            print('object', event.y, event.x)
+            print('start point object', start_point[0], start_point[1])
+            end_point = (event.y, event.x)
+            object_rectangle = (start_point, end_point)
+            color_acu = [0, 0, 0]
+            min_x = np.min([start_point[0], end_point[0]])
+            max_x = np.max([start_point[0], end_point[0]])
+            min_y = np.min([start_point[1], end_point[1]])
+            max_y = np.max([start_point[1], end_point[1]])
+            for x in range(min_x, max_x):
+                for y in range(min_y, max_y):
+                    color_acu[0] += image[x, y, 0]
+                    color_acu[1] += image[x, y, 1]
+                    color_acu[2] += image[x, y, 2]
+            pixels_count = ((max_x - min_x + 1) *
+                            (max_y - min_y + 1))
+            object_color = [color_acu[0] / pixels_count, color_acu[1] / pixels_count, color_acu[2] / pixels_count]
+            canvas.unbind('<ButtonPress-1>')
+            canvas.unbind('<ButtonRelease-1>')
+            canvas.bind('<ButtonPress-1>', start_background_selection)
+            canvas.bind('<ButtonRelease-1>', end_background_selection)
+
+        def start_background_selection(event):
+            global start_point
+            start_point = (event.y, event.x)
+            print('background', event.y, event.x)
+
+        def end_background_selection(event):
+            global start_point
+            global end_point
+            global background_color
+            global object_color
+            global object_rectangle
+            end_point = (event.y, event.x)
+            print('background', event.y, event.x)
+
+            color_acu = [0, 0, 0]
+            min_x = np.min([start_point[0], end_point[0]])
+            max_x = np.max([start_point[0], end_point[0]])
+            min_y = np.min([start_point[1], end_point[1]])
+            max_y = np.max([start_point[1], end_point[1]])
+            for x in range(min_x, max_x):
+                for y in range(min_y, max_y):
+                    color_acu[0] += image[x, y, 0]
+                    color_acu[1] += image[x, y, 1]
+                    color_acu[2] += image[x, y, 2]
+            pixels_count = ((max_x - min_x + 1) *
+                            (max_y - min_y + 1))
+            background_color = [color_acu[0] / pixels_count, color_acu[1] / pixels_count, color_acu[2] / pixels_count]
+
+            print('object color', object_color)
+            print('background color', background_color)
+
+            canvas.unbind('<ButtonPress-1>')
+            canvas.unbind('<ButtonRelease-1>')
+            canvas.bind('<ButtonRelease-1>', self.set_active_window)
+            initial_state = BorderDetector.generate_active_contour_initial_state(image, object_rectangle)
+
+            self.create_new_video(
+                BorderDetector.active_contour_sequence(images, initial_state, background_color, object_color,
+                                                       algorithm=1), color=True, play=True)
+
+        images, color, canvas = self.open_images[self.active_window.get()]
+        image = images[0]
+        canvas.bind('<ButtonPress-1>', start_object_selection)
+        canvas.bind('<ButtonRelease-1>', end_object_selection)
+
+        print('active contours end')
+
     def thresholdg(self):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]
@@ -775,7 +962,7 @@ class ImageEditor(tk.Frame):
                                                 self.deltaT.get())
             print('Global threshold: {}'.format(t))
             aux.append(Util.to_binary(image[:, :, d], t))
-            if(not color):
+            if (not color):
                 aux.append(aux[0])
                 aux.append(aux[0])
                 break
@@ -830,5 +1017,5 @@ class ImageEditor(tk.Frame):
 if __name__ == '__main__':
     app = ImageEditor()
     app.master.title('Image Editor')
-    app.master.geometry('650x600')
+    app.master.geometry('700x650')
     app.mainloop()
