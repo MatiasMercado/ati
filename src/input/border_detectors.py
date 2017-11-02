@@ -2,7 +2,7 @@ import math
 from asyncio import Queue
 
 import numpy as np
-import queue as q
+
 from src.input.filter_provider import FilterProvider
 from src.input.provider import Provider
 from src.input.util import Util
@@ -160,10 +160,10 @@ class BorderDetector:
         p_start = - D * np.sqrt(2)
         p_end = D * np.sqrt(2)
 
-        if number: # steps indicate the number of steps
+        if number:  # steps indicate the number of steps
             theta_step = (theta_end - theta_start) / theta_steps
             p_step = (p_end - p_start) / p_steps
-        else: # steps indicate the value of the step
+        else:  # steps indicate the value of the step
             theta_step = theta_steps * np.pi / 180
             p_step = p_steps
 
@@ -179,10 +179,10 @@ class BorderDetector:
                         for b in range(p_range.size):
                             p = p_range[b]
                             if np.abs(p - x * np.cos(theta) - y * np.sin(theta)) < epsilon:
-                                lines[a,b] += 1
+                                lines[a, b] += 1
                                 if lines[a, b] == 1:
-                                    points[(a,b)] = []
-                                points[(a,b)].append((x,y))
+                                    points[(a, b)] = []
+                                points[(a, b)].append((x, y))
         return lines, points, theta_range, p_range
 
     @staticmethod
@@ -240,8 +240,14 @@ class BorderDetector:
                     if i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1:
                         if image[i][j][k] < t1:
                             image[i][j][k] = 0
-                        elif image[i][j][k] > t2:
+                        if image[i][j][k] > t2:
                             image[i][j][k] = 255
+                        if image[i - 1][j][k] > t2 or image[i][j - 1][k] > t2 or image[i + 1][j][k] > t2 or \
+                                        image[i][j + 1][k] > t2 or image[i - 1][j - 1][k] > t2 or image[i + 1][j + 1][
+                            k] > t2 or image[i - 1][j + 1][k] > t2 or image[i + 1][j - 1][k] > t2:
+                            image[i][j][k] == 255
+                        else:
+                            image[i][j][k] == 0
         return image
 
     @staticmethod
@@ -636,7 +642,6 @@ class BorderDetector:
 
             result_array.append(image)
         return result_array
-
 
 # img = Util.load_image('mate.jpg')
 ##images = [Util.load_image('mate.jpg'), Util.load_image('mate.jpg'), Util.load_image('mate.jpg')]
