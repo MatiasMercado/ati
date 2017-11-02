@@ -281,7 +281,7 @@ class BorderDetector:
 
         t = BorderDetector.otsu_threshold(image)
         desv = BorderDetector.desv(image)
-        aux = BorderDetector.hysteresis(aux, t - (desv / 2), t + (desv / 2))
+        aux = BorderDetector.hysteresis(aux, t - (desv / 4), t + (desv / 4))
         aux1 = BorderDetector.hysteresis(aux1, t - (desv / 2), t + (desv / 2))
         ans = np.zeros(image.shape)
         for i in range(image.shape[0]):
