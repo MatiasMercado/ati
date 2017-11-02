@@ -232,16 +232,20 @@ class BorderDetector:
                                 image[i][j][k] = 0
         return image
 
-    @staticmethod
-    def hysteresis(image, t1, t2):
+@staticmethod
+def hysteresis(image, t1, t2):
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
                     if i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1:
                         if image[i][j][k] < t1:
                             image[i][j][k] = 0
-                        elif image[i][j][k] > t2:
+                        if image[i][j][k] > t2:
                             image[i][j][k] = 255
+                        if image[i-1][j][k] > t2 or image[i][j-1][k] > t2 or image[i+1][j][k] > t2 or image[i][j+1][k] > t2 or image[i-1][j-1][k] > t2 or image[i+1][j+1][k] > t2 or image[i-1][j+1][k] > t2 or image[i+1][j-1][k] > t2:
+                        	image[i][j][k] == 255
+                        else:
+                        	image[i][j][k] == 0
         return image
 
     @staticmethod
