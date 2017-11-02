@@ -2,7 +2,6 @@ import math
 from asyncio import Queue
 
 import numpy as np
-from PIL import Image
 
 from src.input.filter_provider import FilterProvider
 from src.input.provider import Provider
@@ -85,7 +84,7 @@ class BorderDetector:
 
     @staticmethod
     def global_threshold(image, threshold, delta, deltaT):
-        if (deltaT < delta):
+        if deltaT < delta:
             return threshold
         else:
             ans = Util.to_binary(image, threshold)
@@ -157,43 +156,43 @@ class BorderDetector:
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
-                    if (i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1):
+                    if i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1:
                         dx = image[i - 1][j + 1][k] + image[i][j + 1][k] + image[i + 1][j + 1][k] - (
                             image[i - 1][j - 1][k] + image[i][j - 1][k] + image[i + 1][j - 1][k])
                         dy = image[i + 1][j - 1][k] + image[i + 1][j][k] + image[i + 1][j + 1][k] - (
                             image[i - 1][j - 1][k] + image[i - 1][j][k] + image[i - 1][j + 1][k])
                         ans[i][j][k] = math.sqrt(dx ** 2 + dy ** 2)
                         angle = math.degrees(math.atan2(dy, dx))
-                        if (angle < 0):
+                        if angle < 0:
                             angle = angle + 180
-                        if (angle < 22.5 or angle > 157.5):
+                        if angle < 22.5 or angle > 157.5:
                             fi[i][j][k] = 0
-                        elif (angle > 22.5 and angle < 67.5):
+                        elif angle > 22.5 and angle < 67.5:
                             fi[i][j][k] = 45
-                        elif (angle > 67.5 and angle < 112.5):
+                        elif angle > 67.5 and angle < 112.5:
                             fi[i][j][k] = 90
-                        elif (angle > 112.5 and angle < 157.5):
+                        elif angle > 112.5 and angle < 157.5:
                             fi[i][j][k] = 135
-        return (Util.linear_transform(ans), fi)
+        return Util.linear_transform(ans), fi
 
     @staticmethod
     def no_maximos(image, fi):
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
-                    if (i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1):
+                    if i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1:
                         pix = image[i][j][k]
-                        if (fi[i][j][k] == 0):
-                            if (image[i][j - 1][k] > pix or image[i][j + 1][k] > pix):
+                        if fi[i][j][k] == 0:
+                            if image[i][j - 1][k] > pix or image[i][j + 1][k] > pix:
                                 image[i][j][k] = 0
-                        elif (fi[i][j][k] == 45):
-                            if (image[i - 1][j - 1][k] > pix or image[i + 1][j + 1][k] > pix):
+                        elif fi[i][j][k] == 45:
+                            if image[i - 1][j - 1][k] > pix or image[i + 1][j + 1][k] > pix:
                                 image[i][j][k] = 0
-                        elif (fi[i][j][k] == 90):
-                            if (image[i - 1][j][k] > pix or image[i + 1][j][k] > pix):
+                        elif fi[i][j][k] == 90:
+                            if image[i - 1][j][k] > pix or image[i + 1][j][k] > pix:
                                 image[i][j][k] = 0
-                        elif (fi[i][j][k] == 135):
-                            if (image[i + 1][j - 1][k] > pix or image[i - 1][j + 1][k] > pix):
+                        elif fi[i][j][k] == 135:
+                            if image[i + 1][j - 1][k] > pix or image[i - 1][j + 1][k] > pix:
                                 image[i][j][k] = 0
         return image
 
@@ -202,10 +201,10 @@ class BorderDetector:
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 for k in range(image.shape[2]):
-                    if (i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1):
-                        if (image[i][j][k] < t1):
+                    if i > 0 and j > 0 and i < image.shape[0] - 1 and j < image.shape[1] - 1:
+                        if image[i][j][k] < t1:
                             image[i][j][k] = 0
-                        elif (image[i][j][k] > t2):
+                        elif image[i][j][k] > t2:
                             image[i][j][k] = 255
         return image
 
@@ -406,7 +405,7 @@ class BorderDetector:
         if smooth:
             initial_state = BorderDetector.__smooth_contours(initial_state, final_l_in, final_l_out)
 
-        return [initial_state, l_in, l_out]
+        return [initial_state, final_l_in, final_l_out]
 
     @staticmethod
     def __smooth_contours(state, l_in, l_out):
@@ -457,8 +456,8 @@ class BorderDetector:
 
     @staticmethod
     def active_contour(image, initial_state, b_color, o_color, smooth=False, max_iterations=1000, borders=([], [])):
-        (width, height, depth) = image.shape
         print('shape:', image.shape)
+        (width, height, depth) = image.shape
         l_in, l_out = borders
 
         def calculate_difference(p):
@@ -473,33 +472,41 @@ class BorderDetector:
 
         def update_l_in(p):
 
-            n = initial_state[p[0] + 1, p[1]]
-            if p[0] + 1 < initial_state.shape[0] and (n == OUT or n == L_OUT):
-                return False
-            n = initial_state[p[0] - 1, p[1]]
-            if p[0] - 1 >= 0 and (n == OUT or n == L_OUT):
-                return False
-            n = initial_state[p[0], p[1] + 1]
-            if p[1] + 1 < initial_state.shape[1] and (n == OUT or n == L_OUT):
-                return False
-            n = initial_state[p[0], p[1] - 1]
-            if p[1] - 1 >= 0 and (n == OUT or n == L_OUT):
-                return False
+            if p[0] + 1 < initial_state.shape[0]:
+                n = initial_state[p[0] + 1, p[1]]
+                if n == OUT or n == L_OUT:
+                    return False
+            if p[0] - 1 >= 0:
+                n = initial_state[p[0] - 1, p[1]]
+                if n == OUT or n == L_OUT:
+                    return False
+            if p[1] + 1 < initial_state.shape[1]:
+                n = initial_state[p[0], p[1] + 1]
+                if n == OUT or n == L_OUT:
+                    return False
+            if p[1] - 1 >= 0:
+                n = initial_state[p[0], p[1] - 1]
+                if n == OUT or n == L_OUT:
+                    return False
             return True
 
         def update_l_out(p):
-            n = initial_state[p[0] + 1, p[1]]
-            if p[0] + 1 < initial_state.shape[0] and (n == IN or n == L_IN):
-                return False
-            n = initial_state[p[0] - 1, p[1]]
-            if p[0] - 1 >= 0 and (n == IN or n == L_IN):
-                return False
-            n = initial_state[p[0], p[1] + 1]
-            if p[1] + 1 < initial_state.shape[1] and (n == IN or n == L_IN):
-                return False
-            n = initial_state[p[0], p[1] - 1]
-            if p[1] - 1 >= 0 and (n == IN or n == L_IN):
-                return False
+            if p[0] + 1 < initial_state.shape[0]:
+                n = initial_state[p[0] + 1, p[1]]
+                if n == IN or n == L_IN:
+                    return False
+            if p[0] - 1 >= 0:
+                n = initial_state[p[0] - 1, p[1]]
+                if n == IN or n == L_IN:
+                    return False
+            if p[1] + 1 < initial_state.shape[1]:
+                n = initial_state[p[0], p[1] + 1]
+                if n == IN or n == L_IN:
+                    return False
+            if p[1] - 1 >= 0:
+                n = initial_state[p[0], p[1] - 1]
+                if n == IN or n == L_IN:
+                    return False
             return True
 
         def update_l_in_neighbors(p):
@@ -592,11 +599,11 @@ class BorderDetector:
 
 
 # img = Util.load_image('mate.jpg')
-images = [Util.load_image('mate.jpg'), Util.load_image('mate.jpg'), Util.load_image('mate.jpg')]
-state = BorderDetector.generate_active_contour_initial_state(images[0], ((115, 155), (138, 165)))
+##images = [Util.load_image('mate.jpg'), Util.load_image('mate.jpg'), Util.load_image('mate.jpg')]
+##state = BorderDetector.generate_active_contour_initial_state(images[0], ((115, 155), (138, 165)))
 # state_mine = BorderDetector.generate_active_contour_initial_state(img, ((115, 155), (138, 165)))
 # start = time.time()
-results = BorderDetector.active_contour_sequence(images, state, [255, 255, 255], [200, 87, 42])
+##results = BorderDetector.active_contour_sequence(images, state, [255, 255, 255], [200, 87, 42])
 # result, l_in, l_out = BorderDetector.active_contour(img, state, [255, 255, 255], [200, 87, 42], smooth=True)
 # end_original = time.time()
 # result_mine, l_in_mine, l_out_mine = BorderDetector.my_active_contour(img, state, [255, 255, 255], [200, 87, 42], smooth=True)
@@ -619,8 +626,8 @@ results = BorderDetector.active_contour_sequence(images, state, [255, 255, 255],
 # img_to_save = Image.fromarray(img.astype(np.uint8))
 # img_to_save.save('on_image_active.png')
 
-image_count = 0
-for result in results:
-    img_to_save = Image.fromarray(result.astype(np.uint8))
-    img_to_save.save('on_image_active_' + str(image_count) + '.png')
-    image_count += 1
+## image_count = 0
+## for result in results:
+##     img_to_save = Image.fromarray(result.astype(np.uint8))
+##     img_to_save.save('on_image_active_' + str(image_count) + '.png')
+##     image_count += 1
