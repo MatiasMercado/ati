@@ -1,4 +1,5 @@
 import matplotlib
+import math
 
 matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
@@ -122,6 +123,7 @@ class ImageEditor(tk.Frame):
         borders_menu.add_command(label='Laplace', command=self.laplace_borders)
         borders_menu.add_command(label='Gaussian Laplace', command=self.gaussian_laplace_borders)
         borders_menu.add_command(label='Susan', command=self.susan_border_detector)
+        borders_menu.add_command(label='Hough', command=self.hough_transform)
         menu_bar.add_cascade(label='Borders', menu=borders_menu)
 
         # Settings
@@ -204,6 +206,14 @@ class ImageEditor(tk.Frame):
         self.susan_type.set(2)
         self.susan_delta = tk.DoubleVar()
         self.susan_delta.set(0.15)
+
+        # Hough
+        self.hough_theta_steps = tk.IntVar()
+        self.hough_theta_steps.set(4)
+        self.hough_p_steps = tk.IntVar()
+        self.hough_p_steps.set(20)
+        self.hough_threshold = tk.DoubleVar()
+        self.hough_threshold.set(0.8)
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
@@ -338,6 +348,16 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.susan_delta, textvariable=self.susan_delta).grid(row=curr_row(), column=3)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2, sticky=(tk.W, tk.E))
 
+        tk.Label(settings_frame, text='Hough Theta Steps').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.hough_theta_steps, textvariable=self.hough_theta_steps).grid(row=curr_row(), column=3)
+        tk.Label(settings_frame, text='Hough P Steps').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.hough_p_steps, textvariable=self.hough_p_steps).grid(row=curr_row(), column=3)
+        tk.Label(settings_frame, text='Hough Threshold').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.hough_threshold, textvariable=self.hough_threshold).grid(row=curr_row(), column=3)
+
+        ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2,
+                                                                 sticky=(tk.W, tk.E))
+
         return settings_frame
 
     def show_settings(self):
@@ -360,7 +380,7 @@ class ImageEditor(tk.Frame):
 
     def save_image(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         img_path = tk.filedialog.asksaveasfilename(initialdir='../resources/test', title='Save Image')
         linear_image = Util.linear_transform(image)
         # TODO: Change this for a generic save method that checks on the img_path extension
@@ -392,7 +412,8 @@ class ImageEditor(tk.Frame):
         canvas.grid(row=0, column=0)
         canvas.create_image(0, 0, image=tk_img, anchor=tk.NW)
         canvas.my_image = tk_img  # Used only to prevent image being destroy by garbage collector
-        self.open_images[new_window.title()] = img_data, color
+        self.open_images[new_window.title()] = img_data, color, canvas
+        return self.open_images[new_window.title()]
 
     def set_active_window(self, event):
         self.active_window.set(event.widget.winfo_toplevel().title())
@@ -402,7 +423,7 @@ class ImageEditor(tk.Frame):
 
     def histogram(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         plt.hist(image.flatten(), bins='auto', normed=1)
         plt.show()
 
@@ -542,19 +563,19 @@ class ImageEditor(tk.Frame):
     # Transform Menu Functions
     def negative(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.negative(image)
         self.create_new_image(transformed_img)
 
     def contrast(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.contrast_increase(image, self.s1.get(), self.s2.get(), color)
         self.create_new_image(transformed_img)
 
     def dynamic_compression(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.dynamic_range_compression(image, color)
 
         sad = transformed_img.flatten()
@@ -562,76 +583,76 @@ class ImageEditor(tk.Frame):
 
     def gamma_function(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.gamma_power(image, self.gamma.get(), color)
         self.create_new_image(transformed_img)
 
     def equalize(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Provider.equalize_histogram(image)
         self.create_new_image(transformed_img)
 
     def to_binary(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.to_binary(image, self.binary_threshold.get())
         self.create_new_image(transformed_img)
 
     # Operations Functions
     def add(self):
         self.wait_variable(self.active_window)
-        image1, color = self.open_images[self.active_window.get()]
+        image1, color, canvas = self.open_images[self.active_window.get()]
         self.wait_variable(self.active_window)
-        image2, color = self.open_images[self.active_window.get()]
+        image2, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.sum(image1, image2, color)
         self.create_new_image(transformed_img)
 
     def difference(self):
         self.wait_variable(self.active_window)
-        image1, color = self.open_images[self.active_window.get()]
+        image1, color, canvas = self.open_images[self.active_window.get()]
         self.wait_variable(self.active_window)
-        image2, color = self.open_images[self.active_window.get()]
+        image2, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.difference(image1, image2)
         self.create_new_image(transformed_img)
 
     def multiply(self):
         self.wait_variable(self.active_window)
-        image1, color = self.open_images[self.active_window.get()]
+        image1, color, canvas = self.open_images[self.active_window.get()]
         self.wait_variable(self.active_window)
-        image2, color = self.open_images[self.active_window.get()]
+        image2, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.multiply(image1, image2, color)
         self.create_new_image(transformed_img)
 
     def scalar_product(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.scalar_prod(image, self.scalar.get())
         self.create_new_image(transformed_img)
 
     # Noise Functions
     def normal_noise(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.add_additive_noise_normal(image,
             self.normal_mu.get(), self.normal_sigma.get(), self.normal_prob.get(), color)
         self.create_new_image(transformed_img)
 
     def rayleigh_noise(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.add_noise_rayleigh(image, self.rayleigh_scale.get(), self.rayleigh_prob.get(), color)
         self.create_new_image(transformed_img)
 
     def exp_noise(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.add_noise_exponential(image, self.exp_scale.get(), self.exp_prob.get(), color)
         self.create_new_image(transformed_img)
 
     def salt_pepper_noise(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = Util.add_comino_and_sugar_noise(image, self.salt_pepper_p0.get(), self.salt_pepper_p1.get(),
                                                           self.salt_pepper_density.get())
         self.create_new_image(transformed_img)
@@ -641,19 +662,19 @@ class ImageEditor(tk.Frame):
         size = self.mean_filter_size.get().split()
         mean_filter_size = (int(size[0]), int(size[1]))
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.blur(image, mean_filter_size, color)
         self.create_new_image(transformed_img)
 
     def median_filter(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.median_filter(image, independent_layer=color)
         self.create_new_image(transformed_img)
 
     def w_median_filter(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.median_filter(image, weighted=True, independent_layer=color)
         self.create_new_image(transformed_img)
 
@@ -661,20 +682,20 @@ class ImageEditor(tk.Frame):
         sigma = int(self.gauss_filter_sigma.get())
         gauss_filter_size = (2 * sigma + 1, 2 * sigma + 1)
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.gauss_blur(image, gauss_filter_size, sigma, color)
         self.create_new_image(transformed_img)
 
     def anisotropic_filter(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.anisotropic_filter(
             image, self.anisotropic_iter.get(), self.anisotropic_m.get(), self.anisotropic_sigma.get(), color)
         self.create_new_image(transformed_img)
 
     def borders_filter(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = FilterProvider.pasa_altos(image)
         self.create_new_image(transformed_img)
 
@@ -682,7 +703,7 @@ class ImageEditor(tk.Frame):
     # 0: DOWN, 1: DOWN-LEFT, 2: LEFT, 3: UP-LEFT
     def directional_borders_prewitt(self, weighted=False):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         directions_str = self.borders_detectors_directions.get().split()
         directions = []
         for i in range(len(directions_str)):
@@ -696,13 +717,13 @@ class ImageEditor(tk.Frame):
 
     def laplace_borders(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = BorderDetector.laplacian_detector(image, self.laplace_threshold.get(), color)
         self.create_new_image(transformed_img)
 
     def gaussian_laplace_borders(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = BorderDetector.laplacian_gaussian_detector(image,
             self.gaussian_laplace_sigma.get(), self.laplace_threshold.get(), color)
         self.create_new_image(transformed_img)
@@ -710,15 +731,42 @@ class ImageEditor(tk.Frame):
     # 0: BORDER_DETECTOR, 1: CORNER_DETECTOR, 2: BORDER AND CORNER
     def susan_border_detector(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = BorderDetector.susan_border_detector(
             image=image, independent_layer=color,
             detector_type=self.susan_type.get(), delta=self.susan_delta.get())
         self.create_new_image(transformed_img)
 
+    def hough_transform(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        lines, points, theta_range, p_range = BorderDetector.hough_transform(
+            image, self.hough_theta_steps.get(), self.hough_p_steps.get())
+        new_image, new_color, new_canvas = self.create_new_image(np.copy(image))
+        threshold = np.max(lines) * self.hough_threshold.get()
+        for i in range(theta_range.size):
+            for j in range(p_range.size):
+                if lines[i, j] > threshold:
+                    self.draw_single_hough_line(points[(i,j)], theta_range[i], p_range[j], new_canvas)
+        print('[FINISHED] Hough Transform')
+
+
+    def draw_single_hough_line(self, points, theta, p, canvas):
+        mini = points[0]
+        maxi = points[len(points)-1]
+        # mini = points[0]
+        # maxi = points[0]
+        # for i in range(len(points)):
+        #     (a,b) = points[i]
+        #     if a < mini[0] or (a == mini[0] and b < mini[1]):
+        #         mini = (a,b)
+        #     if a > maxi[0] or (a == maxi[0] and b > maxi[1]):
+        #         maxi = (a, b)
+        canvas.create_line(mini[0], mini[1], maxi[0], maxi[1], fill='red', width=5)
+
     def thresholdg(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = np.zeros(image.shape)
         aux = []
         (width, height, layers) = image.shape
@@ -742,7 +790,7 @@ class ImageEditor(tk.Frame):
 
     def thresholdo(self):
         self.wait_variable(self.active_window)
-        image, color = self.open_images[self.active_window.get()]
+        image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = np.zeros(image.shape)
         aux = []
         (width, height, layers) = image.shape

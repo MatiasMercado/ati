@@ -1,5 +1,5 @@
 import numpy as np
-
+import queue as q
 from src.input.filter_provider import FilterProvider
 from src.input.provider import Provider
 from src.input.util import Util
@@ -140,6 +140,42 @@ class BorderDetector:
                     ans[x, y, 1] = 0
                     ans[x, y, 2] = 0
         return ans
+
+    @staticmethod
+    def hough_transform(image, theta_steps, p_steps, epsilon=0.9, number=True):
+        (image_width, image_height) = image.shape[0], image.shape[1]
+        D = max(image_width, image_height)
+
+        # Theta Interval [-90,90] degrees in step of 1 degree equals ~ [-1.5, 1.5] step 0.01 in rad
+        theta_start = -90 * np.pi / 180
+        theta_end = 90 * np.pi / 180
+        p_start = - D * np.sqrt(2)
+        p_end = D * np.sqrt(2)
+
+        if number: # steps indicate the number of steps
+            theta_step = (theta_end - theta_start) / theta_steps
+            p_step = (p_end - p_start) / p_steps
+        else: # steps indicate the value of the step
+            theta_step = theta_steps * np.pi / 180
+            p_step = p_steps
+
+        theta_range = np.arange(theta_start, theta_end, theta_step)
+        p_range = np.arange(p_start, p_end, p_step)
+        lines = np.zeros((theta_range.size, p_range.size))
+        points = {}
+        for x in range(image_height):
+            for y in range(image_width):
+                if image[x, y, 0] == 255:
+                    for a in range(theta_range.size):
+                        theta = theta_range[a]
+                        for b in range(p_range.size):
+                            p = p_range[b]
+                            if np.abs(p - x * np.cos(theta) - y * np.sin(theta)) < epsilon:
+                                lines[a,b] += 1
+                                if lines[a, b] == 1:
+                                    points[(a,b)] = []
+                                points[(a,b)].append((x,y))
+        return lines, points, theta_range, p_range
 
 '''
 img = Util.load_raw('LENA.RAW')
