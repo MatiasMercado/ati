@@ -2,7 +2,8 @@ import threading
 import time
 
 import matplotlib
-import math
+
+from src.input.feature_detector import FeaturesDetector
 
 matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
@@ -69,6 +70,7 @@ class ImageEditor(tk.Frame):
         noise_menu = tk.Menu(menu_bar, tearoff=0)
         filter_menu = tk.Menu(menu_bar, tearoff=0)
         borders_menu = tk.Menu(menu_bar, tearoff=0)
+        feature_detectors_menu = tk.Menu(menu_bar, tearoff=0)
 
         # File Menu
         file_menu.add_command(label='Load', command=self.load_image)
@@ -134,6 +136,10 @@ class ImageEditor(tk.Frame):
         borders_menu.add_command(label='Canny', command=self.canny_edges)
         borders_menu.add_command(label='Active Contours', command=self.active_contours)
         menu_bar.add_cascade(label='Borders', menu=borders_menu)
+
+        # Features Detector Menu
+        feature_detectors_menu.add_command(label='SIFT', command=self.SIFT)
+        menu_bar.add_cascade(label='Features Detectors', menu=feature_detectors_menu)
 
         # Settings
         menu_bar.add_command(label='Settings', command=self.show_settings)
@@ -1017,6 +1023,12 @@ class ImageEditor(tk.Frame):
         # # Don't delete this print, it gives info. about the image
         # print('Otsu threshold: {}'.format(t))
         # transformed_img = Util.to_binary(image, t)
+        self.create_new_image(transformed_img)
+
+    def SIFT(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        transformed_img = FeaturesDetector.SIFT(image)
         self.create_new_image(transformed_img)
 
     # Private Functions
