@@ -150,6 +150,42 @@ class BorderDetector:
         return ans
 
     @staticmethod
+    def harris_corner_detector(image, independent_layer=False, sigma=3):
+        Ix = np.zeros(image.shape)
+        Iy = np.zeros(image.shape)
+        Ixy = np.zeros(image.shape)
+        Ix2 = np.zeros(image.shape)
+        Iy2 = np.zeros(image.shape)
+        cim1 = np.zeros(image.shape)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                if 0 < i < image.shape[0] - 1 and 0 < j < image.shape[1] - 1:
+                    Ix[i][j][0] = image[i - 1][j + 1][0] + image[i][j + 1][0] + image[i + 1][j + 1][0] - (
+                    image[i - 1][j - 1][0] + image[i][j - 1][0] + image[i + 1][j - 1][0])
+                    Iy[i][j][0] = image[i + 1][j - 1][0] + image[i + 1][j][0] + image[i + 1][j + 1][0] - (
+                    image[i - 1][j - 1][0] + image[i - 1][j][0] + image[i - 1][j + 1][0])
+                    Ixy[i][j][0] = Ix[i][j][0] * Iy[i][j][0]
+                    Ix2[i][j][0] = Ix[i][j][0] ** 2
+                    Iy2[i][j][0] = Iy[i][j][0] ** 2
+                    for k in range(image.shape[2]):
+                        Ix[i][j][k] = Ix[i][j][0]
+                        Iy[i][j][k] = Iy[i][j][0]
+                        Ixy[i][j][k] = Ixy[i][j][0]
+                        Ix2[i][j][k] = Ix2[i][j][0]
+                        Iy2[i][j][k] = Iy2[i][j][0]
+        gauss_filter_size = (2 * sigma + 1, 2 * sigma + 1)
+        Ix2 = FilterProvider.gauss_blur(Ix2, gauss_filter_size, sigma, independent_layer)
+        Iy2 = FilterProvider.gauss_blur(Iy2, gauss_filter_size, sigma, independent_layer)
+        Ixy = FilterProvider.gauss_blur(Ixy, gauss_filter_size, sigma, independent_layer)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                cim1[i][j][0] = (Ix2[i][j][0] * Iy2[i][j][0] - Ixy[i][j][0] ** 2) \
+                                    - 0.04 * ((Ix2[i][j][0] + Iy2[i][j][0]) ** 2)
+                for k in range(image.shape[2]):
+                    cim1[i][j][k] = cim1[i][j][0]
+        return cim1
+
+    @staticmethod
     def hough_transform(image, theta_steps, p_steps, epsilon=0.9, number=True):
         (image_width, image_height) = image.shape[0], image.shape[1]
         D = max(image_width, image_height)

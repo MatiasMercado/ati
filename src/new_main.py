@@ -1,6 +1,6 @@
 import threading
 import time
-
+import cv2
 import matplotlib
 import math
 
@@ -133,6 +133,7 @@ class ImageEditor(tk.Frame):
         borders_menu.add_command(label='Hough', command=self.hough_transform)
         borders_menu.add_command(label='Canny', command=self.canny_edges)
         borders_menu.add_command(label='Active Contours', command=self.active_contours)
+        borders_menu.add_command(label='Harris', command=self.harris_corner_detector)
         menu_bar.add_cascade(label='Borders', menu=borders_menu)
 
         # Settings
@@ -229,6 +230,10 @@ class ImageEditor(tk.Frame):
         self.canny_sigma1.set(2)
         self.canny_sigma2 = tk.IntVar()
         self.canny_sigma2.set(2)
+
+        # Canny
+        self.harris_threshold = tk.DoubleVar()
+        self.harris_threshold.set(0.1)
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
@@ -385,6 +390,11 @@ class ImageEditor(tk.Frame):
         tk.Entry(settings_frame, text=self.canny_sigma2, textvariable=self.canny_sigma2).grid(row=curr_row(), column=3)
         ttk.Separator(settings_frame, orient=tk.HORIZONTAL).grid(row=next_row(), column=2, columnspan=2,
                                                                  sticky=(tk.W, tk.E))
+
+        # Harris
+        tk.Label(settings_frame, text='Harris Threshold').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.harris_threshold, textvariable=self.harris_threshold).grid(row=curr_row(), column=3)
+
         return settings_frame
 
     def show_settings(self):
@@ -827,6 +837,34 @@ class ImageEditor(tk.Frame):
             detector_type=self.susan_type.get(), delta=self.susan_delta.get())
         self.create_new_image(transformed_img)
 
+    def harris_corner_detector(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        # Someday
+        # if color:
+            # gray_image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+            # print(gray_image.shape)
+            # print(gray_image)
+            # self.create_new_image(img_data=gray_image, color=color)
+        # else:
+        #     gray_image = image
+        transformed_img = BorderDetector.harris_corner_detector(image=image, independent_layer=False)
+        transformed_img = self.harris_draw_corners(image, transformed_img, self.harris_threshold.get())
+        self.create_new_image(transformed_img)
+
+    def harris_draw_corners(self, image, transformed_img, p=0.1):
+        threshold = np.max(transformed_img) * p
+        print('[INFO] Harris Corner Detector Calculated Threshold: ' + str(threshold))
+        ans = np.copy(image)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                if transformed_img[i, j, 0] >= threshold:
+                    ans[i, j, 0] = 255
+                    ans[i, j, 1] = 0
+                    ans[i, j, 2] = 0
+        return ans
+
+    # [WARN] Pass only greyscale images!
     def hough_transform(self):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]
@@ -840,20 +878,10 @@ class ImageEditor(tk.Frame):
                     self.draw_single_hough_line(points[(i,j)], theta_range[i], p_range[j], new_canvas)
         print('[FINISHED] Hough Transform')
 
-
     def draw_single_hough_line(self, points, theta, p, canvas):
         mini = points[0]
         maxi = points[len(points)-1]
-        # mini = points[0]
-        # maxi = points[0]
-        # for i in range(len(points)):
-        #     (a,b) = points[i]
-        #     if a < mini[0] or (a == mini[0] and b < mini[1]):
-        #         mini = (a,b)
-        #     if a > maxi[0] or (a == maxi[0] and b > maxi[1]):
-        #         maxi = (a, b)
         canvas.create_line(mini[1], mini[0], maxi[1], maxi[0], fill='red', width=5)
-        # canvas.create_line(mini[0], mini[1], maxi[0], maxi[1], fill='red', width=5)
 
     def canny_edges(self):
         self.wait_variable(self.active_window)
