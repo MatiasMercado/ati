@@ -71,12 +71,12 @@ class Provider:
         return circle
 
     @staticmethod
-    def get_circle_coordinates(radius, center):
+    def get_circle_coordinates(radius, center, step=1):
         (x_c, y_c) = center
         ret = []
-        for x in range(-radius, radius, 1):
+        for x in range(-radius, radius, step):
             ret.append((x + x_c, y_c + int(np.sqrt(radius * radius - x * x))))
-        for x in range(radius-1, -radius+1, -1):
+        for x in range(radius - 1, -radius + 1, -step):
             ret.append((x + x_c, y_c - int(np.sqrt(radius * radius - x * x))))
         return ret
 
