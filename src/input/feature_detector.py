@@ -83,6 +83,17 @@ class FeaturesDetector:
         return FilterProvider.single_point_gradient(image, position, direction, weighted=True)
 
     @staticmethod
+    def iris_detector(image, initial_state, alpha, beta, gamma):
+        length = len(initial_state)
+        for index in range(length):
+            initial_state[index] = FeaturesDetector.find_lowest_energy(
+                image, initial_state[index], initial_state[(index + 1) % length],
+                initial_state[(index - 1) % length], alpha, beta, gamma,
+                FeaturesDetector.average_distance(initial_state)
+            )
+
+
+    @staticmethod
     def find_lowest_energy(image, position, next_point, prev_point, alpha, beta, gamma, avg_distance):
         width, height = image.shape
         direction = {
@@ -99,11 +110,14 @@ class FeaturesDetector:
         current_max = ((0, 0), 0)
         for x_diff in [-1, 0, 1]:
             for y_diff in [-1, 0, 1]:
-                current_value = FeaturesDetector.__get_total_energy(
-                    image, position, next_point, prev_point, alpha, beta,
-                    gamma, direction[(x_diff, y_diff)], avg_distance)
-                if current_value > current_max[1]:
-                    current_max = (x_diff, y_diff), current_value
+                current_x = x + x_diff
+                current_y = y + y_diff
+                if width > current_x >= 0 and height > current_y >= 0:
+                    current_value = FeaturesDetector.__get_total_energy(
+                        image, (current_x, current_y), next_point, prev_point, alpha, beta,
+                        gamma, direction[(x_diff, y_diff)], avg_distance)
+                    if current_value > current_max[1]:
+                        current_max = (x_diff, y_diff), current_value
         return current_max[0]
 
     @staticmethod
