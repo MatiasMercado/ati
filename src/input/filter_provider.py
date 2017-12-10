@@ -213,8 +213,6 @@ class FilterProvider:
                         mask[x][y] = -1
                 else:
                     mask[x][y] = 0
-        print('default matrix')
-        print(mask)
         mask = FilterProvider.rotate_matrix(mask, direction)
         aux = FilterProvider.__apply_mask(image, position, mask)
         return np.abs(aux)

@@ -2,6 +2,7 @@ import numpy as np
 from cv2 import cv2
 
 from src.input.util import Util
+from src.new_main import ImageEditor
 from src.input.filter_provider import FilterProvider
 from src.input.vector_util import VectorUtil
 from src.input.provider import Provider
@@ -89,8 +90,15 @@ class FeaturesDetector:
         hi_abs = VectorUtil.vector_abs(hi)
         hi1_abs = VectorUtil.vector_abs(hi1)
 
-        hi_normilzed = (hi[0] / hi_abs, hi[1] / hi_abs)
-        hi1_normilzed = (hi1[0] / hi1_abs, hi1[1] / hi1_abs)
+        if hi_abs != 0:
+            hi_normilzed = (hi[0] / hi_abs, hi[1] / hi_abs)
+        else:
+            hi_normilzed = hi
+
+        if hi1_abs != 0:
+            hi1_normilzed = (hi1[0] / hi1_abs, hi1[1] / hi1_abs)
+        else:
+            hi1_normilzed = hi1
 
         return VectorUtil.vector_abs((hi1_normilzed[0] - hi_normilzed[0],
                                       hi1_normilzed[1] - hi_normilzed[1]))
@@ -156,11 +164,13 @@ class FeaturesDetector:
                 + beta * curvature_energy
                 + gamma * FeaturesDetector.image_energy(image, position, direction))
 
-image = Util.load_image('circle.pbm')
+# image = Util.load_image('circle.pbm')
+image = Provider.draw_circle()
 gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-initial_state = Provider.get_circle_coordinates(90, (150, 150))
+initial_state = Provider.get_circle_coordinates(80, (128, 128))
 control_points = FeaturesDetector.iris_detector(gray, initial_state)
 image_editor = ImageEditor()
 transformed_image = image_editor.draw_control_points(gray, control_points)
-image_editor.create_new_image(transformed_image)
-# cv2.imwrite('sift_keypoints.jpg', image)
+# image_editor.create_new_image(transformed_image)
+print(control_points)
+cv2.imwrite('myCircle.jpg', transformed_image)
