@@ -197,6 +197,29 @@ class FilterProvider:
         return ans
 
     @staticmethod
+    def single_point_gradient(image, position, direction, weighted=False):
+        mask = np.zeros((3, 3))
+        for x in range(3):
+            for y in range(3):
+                if x == 0:
+                    if y == 1 and weighted:
+                        mask[x][y] = 2
+                    else:
+                        mask[x][y] = 1
+                elif x == 2:
+                    if y == 1 and weighted:
+                        mask[x][y] = -2
+                    else:
+                        mask[x][y] = -1
+                else:
+                    mask[x][y] = 0
+        print('default matrix')
+        print(mask)
+        mask = FilterProvider.rotate_matrix(mask, direction)
+        aux = FilterProvider.__apply_mask(image, position, mask)
+        return np.abs(aux)
+
+    @staticmethod
     def border(image, weighted=False, direction=0, independent_layer=False):
         mask = np.zeros((3, 3))
         for x in range(3):
@@ -300,6 +323,7 @@ class FilterProvider:
                     for k in range(matrix.shape[2]):
                         ans[i][j][k] = aux
         return ans
+
 
 # img = Util.load_raw('LENA.RAW')
 # img = FilterProvider.four_directions_border(img, merge_function=lambda p1, p2: p1 if p1 > p2 else p2)
