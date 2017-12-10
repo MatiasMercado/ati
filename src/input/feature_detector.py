@@ -1,6 +1,7 @@
 import numpy as np
 from cv2 import cv2
 from src.input.vector_util import VectorUtil
+from src.input.filter_provider import FilterProvider
 
 class FeaturesDetector:
     @staticmethod
@@ -56,7 +57,7 @@ class FeaturesDetector:
         x, y = control_point
         p1, p2 = prev_point
         n1, n2 = next_point
-        return (p1 - 2*x + n1)**2 + (p2 -2*y + n2)**2
+        return (p1 - 2 * x + n1) ** 2 + (p2 - 2 * y + n2) ** 2
 
     @staticmethod
     def continuity_energy(control_point, average_distance, prev_point):
@@ -65,7 +66,7 @@ class FeaturesDetector:
     @staticmethod
     def average_distance(control_points):
         # Set last point as previous for the first element
-        prev = control_points[len(control_points)-1]
+        prev = control_points[len(control_points) - 1]
         average = 0
         for point in control_points:
             average += np.sqrt(VectorUtil.sqr_euclidean_distance(point, prev))
@@ -88,6 +89,55 @@ class FeaturesDetector:
         hi1_normilzed = (hi1[0] / hi1_abs, hi1[1] / hi1_abs)
 
         return VectorUtil.vector_abs((hi1_normilzed[0]-hi_normilzed[0], hi1_normilzed[1]- hi_normilzed[1]))
+
+    @staticmethod
+    def image_energy(image, position, direction):
+        return FilterProvider.single_point_gradient(image, position, direction, weighted=True)
+
+    @staticmethod
+    def iris_detector(image, initial_state, alpha, beta, gamma, iterations=10):
+        length = len(initial_state)
+        for i in range(iterations):
+            for index in range(length):
+                initial_state[index] = FeaturesDetector.find_lowest_energy(
+                    image, initial_state[index], initial_state[(index + 1) % length],
+                    initial_state[(index - 1) % length], alpha, beta, gamma,
+                    FeaturesDetector.average_distance(initial_state)
+                )
+
+
+    @staticmethod
+    def find_lowest_energy(image, position, next_point, prev_point, alpha, beta, gamma, avg_distance):
+        width, height = image.shape
+        direction = {
+            (0, 1): 0,
+            (1, 1): 3,
+            (1, 0): 2,
+            (1, -1): 1,
+            (0, -1): 0,
+            (-1, -1): 3,
+            (-1, 0): 2,
+            (-1, 1): 1,
+        }
+        x, y = position
+        current_max = ((0, 0), 0)
+        for x_diff in [-1, 0, 1]:
+            for y_diff in [-1, 0, 1]:
+                current_x = x + x_diff
+                current_y = y + y_diff
+                if width > current_x >= 0 and height > current_y >= 0:
+                    current_value = FeaturesDetector.__get_total_energy(
+                        image, (current_x, current_y), next_point, prev_point, alpha, beta,
+                        gamma, direction[(x_diff, y_diff)], avg_distance)
+                    if current_value > current_max[1]:
+                        current_max = (x_diff, y_diff), current_value
+        return current_max[0]
+
+    @staticmethod
+    def __get_total_energy(image, position, next_point, prev_point, alpha, beta, gamma, direction, avg_distance):
+        return (alpha * FeaturesDetector.continuity_energy(position, avg_distance, next_point)
+                + beta * FeaturesDetector.curvature_energy(position, prev_point, next_point)
+                + gamma * FeaturesDetector.image_energy(image, position, direction))
 
 #
 # image = Util.load_image('milo.JPG')

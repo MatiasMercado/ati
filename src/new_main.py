@@ -240,7 +240,7 @@ class ImageEditor(tk.Frame):
 
         # Canny
         self.harris_threshold = tk.DoubleVar()
-        self.harris_threshold.set(0.1)
+        self.harris_threshold.set(0.008)
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
