@@ -83,14 +83,15 @@ class FeaturesDetector:
         return FilterProvider.single_point_gradient(image, position, direction, weighted=True)
 
     @staticmethod
-    def iris_detector(image, initial_state, alpha, beta, gamma):
+    def iris_detector(image, initial_state, alpha, beta, gamma, iterations=10):
         length = len(initial_state)
-        for index in range(length):
-            initial_state[index] = FeaturesDetector.find_lowest_energy(
-                image, initial_state[index], initial_state[(index + 1) % length],
-                initial_state[(index - 1) % length], alpha, beta, gamma,
-                FeaturesDetector.average_distance(initial_state)
-            )
+        for i in range(iterations):
+            for index in range(length):
+                initial_state[index] = FeaturesDetector.find_lowest_energy(
+                    image, initial_state[index], initial_state[(index + 1) % length],
+                    initial_state[(index - 1) % length], alpha, beta, gamma,
+                    FeaturesDetector.average_distance(initial_state)
+                )
 
 
     @staticmethod
