@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.input.distance_util import DistanceUtil
+from src.input.vector_util import VectorUtil
 from src.input.util import Util
 
 
@@ -66,7 +66,7 @@ class Provider:
         for x in range(width):
             for y in range(height):
                 for z in range(3):
-                    if DistanceUtil.euclidean_distance_lower_than(center, (x, y), radius):
+                    if VectorUtil.euclidean_distance_lower_than(center, (x, y), radius):
                         circle[x, y, z] = 255
         return circle
 
@@ -78,7 +78,7 @@ class Provider:
         for x in range(width):
             for y in range(height):
                 for z in range(3):
-                    if DistanceUtil.chebyshev_distance_lower_than(center, (x, y), side):
+                    if VectorUtil.chebyshev_distance_lower_than(center, (x, y), side):
                         square[x, y, z] = 255
         return square
 
