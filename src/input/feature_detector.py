@@ -1,8 +1,10 @@
 import numpy as np
 from cv2 import cv2
 
+from src.input.util import Util
 from src.input.filter_provider import FilterProvider
 from src.input.vector_util import VectorUtil
+from src.input.provider import Provider
 
 
 class FeaturesDetector:
@@ -134,7 +136,8 @@ class FeaturesDetector:
             for y_diff in [-1, 0, 1]:
                 current_x = x + x_diff
                 current_y = y + y_diff
-                if width > current_x >= 0 and height > current_y >= 0:
+                if (width > current_x >= 0 and height > current_y >= 0 and not
+                        (x_diff == 0 and y_diff == 0)):
                     current_value = FeaturesDetector.__get_total_energy(
                         image, (current_x, current_y), next_point, prev_point, alpha, beta,
                         gamma, direction[(x_diff, y_diff)], avg_distance, first)
@@ -153,13 +156,11 @@ class FeaturesDetector:
                 + beta * curvature_energy
                 + gamma * FeaturesDetector.image_energy(image, position, direction))
 
-#
-# image = Util.load_image('milo.JPG')
-# gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-#
-# sift = cv2.xfeatures2d.SIFT_create()
-# kp = sift.detect(gray, None)
-#
-# image = cv2.drawKeypoints(gray, kp, image)  # , flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-#
+image = Util.load_image('circle.pbm')
+gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+initial_state = Provider.get_circle_coordinates(90, (150, 150))
+control_points = FeaturesDetector.iris_detector(gray, initial_state)
+image_editor = ImageEditor()
+transformed_image = image_editor.draw_control_points(gray, control_points)
+image_editor.create_new_image(transformed_image)
 # cv2.imwrite('sift_keypoints.jpg', image)

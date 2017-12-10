@@ -1002,6 +1002,27 @@ class ImageEditor(tk.Frame):
 
         print('active contours end')
 
+    def iris_detector(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        # final_state = FeaturesDetector.iris_detector(image, initial_state)
+        # transformed_img = self.draw_control_points(image, final_state)
+        # self.create_new_image(transformed_img)
+
+    def draw_control_points(self, image, final_state):
+        copy = np.copy(image)
+        ans = np.zeros(image.shape[0], image.shape[1], 3)
+        ans[:,:,0] = copy
+        ans[:,:,1] = copy
+        ans[:,:,2] = copy
+        for point in final_state:
+            x, y = point
+            ans[x][y][0] = 255
+            ans[x][y][1] = 255
+            ans[x][y][2] = 255
+        return ans
+
+
     def thresholdg(self):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]

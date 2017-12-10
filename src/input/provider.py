@@ -74,10 +74,10 @@ class Provider:
     def get_circle_coordinates(radius, center):
         (x_c, y_c) = center
         ret = []
-        for x in range(x_c - radius, x_c + radius, 1):
-            ret.append((x, y_c + int(np.sqrt(radius * radius - x * x))))
-        for x in range(x_c + radius - 1, x_c - radius + 1, -1):
-            ret.append((x, y_c - int(np.sqrt(radius * radius - x * x))))
+        for x in range(-radius, radius, 1):
+            ret.append((x + x_c, y_c + int(np.sqrt(radius * radius - x * x))))
+        for x in range(radius-1, -radius+1, -1):
+            ret.append((x + x_c, y_c - int(np.sqrt(radius * radius - x * x))))
         return ret
 
 
