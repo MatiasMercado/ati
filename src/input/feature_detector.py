@@ -4,7 +4,7 @@ from cv2 import cv2
 from src.input.filter_provider import FilterProvider
 from src.input.provider import Provider
 from src.input.vector_util import VectorUtil
-from src.new_main import ImageEditor
+# from src.new_main import ImageEditor
 
 
 class FeaturesDetector:
@@ -114,7 +114,7 @@ class FeaturesDetector:
     @staticmethod
     def iris_detector(image, initial_state, alpha=0.5, beta=0.5, gamma=0.5, iterations=10):
         length = len(initial_state)
-        image_editor = ImageEditor()
+        # image_editor = ImageEditor()
 
         for i in range(iterations):
             for index in range(length):
@@ -133,10 +133,10 @@ class FeaturesDetector:
                 #     initial_state[(index - 1) % length], alpha, beta, gamma,
                 #     FeaturesDetector.average_distance(initial_state), False
                 # )
-            if i % 10 == 0:
-                transformed_image = image_editor.draw_control_points(image, initial_state)
-                cv2.imwrite('myCircle-' + str(i) + '.jpg', transformed_image)
-            print(i)
+            # if i % 10 == 0:
+            #     transformed_image = image_editor.draw_control_points(image, initial_state)
+            #     cv2.imwrite('myCircle-' + str(i) + '.jpg', transformed_image)
+            # print(i)
 
         return initial_state
 
@@ -209,14 +209,12 @@ class FeaturesDetector:
         return continuity_energy, curvature_energy, image_energy
 
 
-# image = Util.load_image('circle.pbm')
-image = Provider.draw_circle()
-gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-initial_state = Provider.get_circle_coordinates(55, (128, 128))
-print(initial_state)
-control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=100)
-image_editor = ImageEditor()
-transformed_image = image_editor.draw_control_points(gray, control_points)
-# image_editor.create_new_image(transformed_image)
-print(control_points)
-cv2.imwrite('myCircle.jpg', transformed_image)
+# image = Provider.draw_circle()
+# gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+# initial_state = Provider.get_circle_coordinates(55, (128, 128))
+# print(initial_state)
+# control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=100)
+# image_editor = ImageEditor()
+# transformed_image = image_editor.draw_control_points(gray, control_points)
+# print(control_points)
+# cv2.imwrite('myCircle.jpg', transformed_image)
