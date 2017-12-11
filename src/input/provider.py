@@ -80,7 +80,6 @@ class Provider:
             ret.append((x + x_c, y_c - int(np.sqrt(radius * radius - x * x))))
         return ret
 
-
     @staticmethod
     def draw_square(size=(256, 256), side=50):
         (width, height) = size

@@ -1,11 +1,10 @@
 import numpy as np
 from cv2 import cv2
 
-from src.input.util import Util
-from src.new_main import ImageEditor
 from src.input.filter_provider import FilterProvider
-from src.input.vector_util import VectorUtil
 from src.input.provider import Provider
+from src.input.vector_util import VectorUtil
+from src.new_main import ImageEditor
 
 
 class FeaturesDetector:
@@ -66,7 +65,7 @@ class FeaturesDetector:
 
     @staticmethod
     def continuity_energy(control_point, average_distance, prev_point):
-        return average_distance - np.sqrt(VectorUtil.sqr_euclidean_distance(control_point, prev_point))
+        return np.abs(average_distance - np.sqrt(VectorUtil.sqr_euclidean_distance(control_point, prev_point)))
 
     @staticmethod
     def average_distance(control_points):
@@ -105,53 +104,97 @@ class FeaturesDetector:
 
     @staticmethod
     def image_energy(image, position, direction):
-        return FilterProvider.single_point_gradient(image, position, direction, weighted=True)
+        return np.max([
+            FilterProvider.single_point_gradient(image, position, 0, weighted=True),
+            FilterProvider.single_point_gradient(image, position, 1, weighted=True),
+            FilterProvider.single_point_gradient(image, position, 2, weighted=True),
+            FilterProvider.single_point_gradient(image, position, 3, weighted=True)
+        ])
 
     @staticmethod
     def iris_detector(image, initial_state, alpha=0.5, beta=0.5, gamma=0.5, iterations=10):
         length = len(initial_state)
+        image_editor = ImageEditor()
+
         for i in range(iterations):
             for index in range(length):
+                last = initial_state[index]
                 initial_state[index] = FeaturesDetector.find_lowest_energy(
                     image, initial_state[index], initial_state[(index + 1) % length],
                     initial_state[(index - 1) % length], alpha, beta, gamma,
                     FeaturesDetector.average_distance(initial_state), True
                 )
-                initial_state[index] = FeaturesDetector.find_lowest_energy(
-                    image, initial_state[index], initial_state[(index + 1) % length],
-                    initial_state[(index - 1) % length], alpha, beta, gamma,
-                    FeaturesDetector.average_distance(initial_state), False
-                )
+                # if np.abs(last[0] - initial_state[index][0]) > 1 or np.abs(last[1] - initial_state[index][1]) > 1:
+                #     print(last)
+                #     print(initial_state[index])
+
+                # initial_state[index] = FeaturesDetector.find_lowest_energy(
+                #     image, initial_state[index], initial_state[(index + 1) % length],
+                #     initial_state[(index - 1) % length], alpha, beta, gamma,
+                #     FeaturesDetector.average_distance(initial_state), False
+                # )
+            if i % 10 == 0:
+                transformed_image = image_editor.draw_control_points(image, initial_state)
+                cv2.imwrite('myCircle-' + str(i) + '.jpg', transformed_image)
+            print(i)
 
         return initial_state
 
     @staticmethod
     def find_lowest_energy(image, position, next_point, prev_point, alpha, beta, gamma, avg_distance, first=True):
         width, height = image.shape
+        # direction = {
+        #     (0, 1): 0,
+        #     (1, 1): 3,
+        #     (1, 0): 2,
+        #     (1, -1): 1,
+        #     (0, -1): 0,
+        #     (-1, -1): 3,
+        #     (-1, 0): 2,
+        #     (-1, 1): 1,
+        # }
         direction = {
-            (0, 1): 0,
-            (1, 1): 3,
-            (1, 0): 2,
-            (1, -1): 1,
-            (0, -1): 0,
-            (-1, -1): 3,
-            (-1, 0): 2,
+            (-1, 0): 0,
             (-1, 1): 1,
+            (0, 1): 2,
+            (1, 1): 3,
+            (1, 0): 0,
+            (1, -1): 1,
+            (0, -1): 2,
+            (-1, -1): 3,
         }
         x, y = position
-        current_max = ((0, 0), 0)
+        energies = []
+        max_continuity = 0
+        max_curvature = 0
+        max_gradient = 0
+        min_gradient = 0
         for x_diff in [-1, 0, 1]:
             for y_diff in [-1, 0, 1]:
                 current_x = x + x_diff
                 current_y = y + y_diff
                 if (width > current_x >= 0 and height > current_y >= 0 and not
-                        (x_diff == 0 and y_diff == 0)):
-                    current_value = FeaturesDetector.__get_total_energy(
+                (x_diff == 0 and y_diff == 0)):
+                    current_energies = FeaturesDetector.__get_total_energy(
                         image, (current_x, current_y), next_point, prev_point, alpha, beta,
                         gamma, direction[(x_diff, y_diff)], avg_distance, first)
-                    if current_value > current_max[1]:
-                        current_max = (x_diff, y_diff), current_value
-        return current_max[0]
+
+                    energies.append(((current_x, current_y), current_energies))
+                    max_continuity = np.max([current_energies[0], max_continuity])
+                    max_curvature = np.max([current_energies[1], max_curvature])
+                    max_gradient = np.max([current_energies[2], max_gradient])
+                    min_gradient = np.min([current_energies[2], min_gradient])
+
+        lowest_energy = ((0, 0), 100000)
+        for energy in energies:
+            current_normalized_gradient = ((energy[1][2] - min_gradient) / (max_gradient - min_gradient)) if (
+                                                                                                                     max_gradient - min_gradient) != 0 else 0
+            current_energy = (energy[1][0] / max_continuity * alpha + energy[1][1] / max_curvature * beta
+                              - current_normalized_gradient * gamma)
+            if current_energy < lowest_energy[1]:
+                lowest_energy = (energy[0], current_energy)
+
+        return lowest_energy[0]
 
     @staticmethod
     def __get_total_energy(image, position, next_point, prev_point, alpha, beta, gamma,
@@ -160,15 +203,18 @@ class FeaturesDetector:
             curvature_energy = FeaturesDetector.curvature_energy(position, prev_point, next_point)
         else:
             curvature_energy = FeaturesDetector.second_curvature_energy(position, prev_point, next_point)
-        return (alpha * FeaturesDetector.continuity_energy(position, avg_distance, next_point)
-                + beta * curvature_energy
-                + gamma * FeaturesDetector.image_energy(image, position, direction))
+        continuity_energy = FeaturesDetector.continuity_energy(position, avg_distance, prev_point)
+        image_energy = FeaturesDetector.image_energy(image, position, direction)
+
+        return continuity_energy, curvature_energy, image_energy
+
 
 # image = Util.load_image('circle.pbm')
 image = Provider.draw_circle()
 gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-initial_state = Provider.get_circle_coordinates(80, (128, 128))
-control_points = FeaturesDetector.iris_detector(gray, initial_state)
+initial_state = Provider.get_circle_coordinates(55, (128, 128))
+print(initial_state)
+control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=100)
 image_editor = ImageEditor()
 transformed_image = image_editor.draw_control_points(gray, control_points)
 # image_editor.create_new_image(transformed_image)

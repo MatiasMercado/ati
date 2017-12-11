@@ -6,15 +6,13 @@ WEIGHTED_MEDIAN_MASK = np.matrix([[1, 2, 1],
                                   [2, 4, 2],
                                   [1, 2, 1]])
 
-
 SUSAN_MASK = np.matrix([[0, 0, 1, 1, 1, 0, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [1, 1, 1, 1, 1, 1, 1],
-                         [1, 1, 1, 1, 1, 1, 1],
-                         [1, 1, 1, 1, 1, 1, 1],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 1, 1, 1, 0, 0]])
-
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [1, 1, 1, 1, 1, 1, 1],
+                        [1, 1, 1, 1, 1, 1, 1],
+                        [1, 1, 1, 1, 1, 1, 1],
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [0, 0, 1, 1, 1, 0, 0]])
 
 SUSAN_BORDER_DETECTOR = 0
 SUSAN_CORNER_DETECTOR = 1
@@ -147,11 +145,11 @@ class FilterProvider:
         s = 1 - (acu / SUSAN_MASK_SIZE)
         if 0.75 - delta <= s <= 0.75 + delta and \
                 (detector_type == SUSAN_CORNER_DETECTOR or
-                         detector_type == SUSAN_BORDER_CORNER_DETECTOR):
+                 detector_type == SUSAN_BORDER_CORNER_DETECTOR):
             return SUSAN_CORNER_POINT
         elif 0.5 - delta <= s <= 0.5 + delta and \
                 (detector_type == SUSAN_BORDER_DETECTOR or
-                         detector_type == SUSAN_BORDER_CORNER_DETECTOR):
+                 detector_type == SUSAN_BORDER_CORNER_DETECTOR):
             return SUSAN_BORDER_POINT
         else:
             return 0
@@ -255,7 +253,8 @@ class FilterProvider:
         for i in directions:
             print(i)
             ret = Util.element_wise_operation(ret, FilterProvider.border(
-                image, weighted=weighted, direction=i, independent_layer=independent_layer), merge_function, independent_layer)
+                image, weighted=weighted, direction=i, independent_layer=independent_layer), merge_function,
+                                              independent_layer)
         return ret
 
     @staticmethod
@@ -321,7 +320,6 @@ class FilterProvider:
                     for k in range(matrix.shape[2]):
                         ans[i][j][k] = aux
         return ans
-
 
 # img = Util.load_raw('LENA.RAW')
 # img = FilterProvider.four_directions_border(img, merge_function=lambda p1, p2: p1 if p1 > p2 else p2)

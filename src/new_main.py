@@ -398,7 +398,8 @@ class ImageEditor(tk.Frame):
 
         # Harris
         tk.Label(settings_frame, text='Harris Threshold').grid(row=next_row(), column=2)
-        tk.Entry(settings_frame, text=self.harris_threshold, textvariable=self.harris_threshold).grid(row=curr_row(), column=3)
+        tk.Entry(settings_frame, text=self.harris_threshold, textvariable=self.harris_threshold).grid(row=curr_row(),
+                                                                                                      column=3)
 
         return settings_frame
 
@@ -847,10 +848,10 @@ class ImageEditor(tk.Frame):
         image, color, canvas = self.open_images[self.active_window.get()]
         # Someday
         # if color:
-            # gray_image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-            # print(gray_image.shape)
-            # print(gray_image)
-            # self.create_new_image(img_data=gray_image, color=color)
+        # gray_image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+        # print(gray_image.shape)
+        # print(gray_image)
+        # self.create_new_image(img_data=gray_image, color=color)
         # else:
         #     gray_image = image
         transformed_img = BorderDetector.harris_corner_detector(image=image, independent_layer=False)
@@ -880,12 +881,12 @@ class ImageEditor(tk.Frame):
         for i in range(theta_range.size):
             for j in range(p_range.size):
                 if lines[i, j] > threshold:
-                    self.draw_single_hough_line(points[(i,j)], theta_range[i], p_range[j], new_canvas)
+                    self.draw_single_hough_line(points[(i, j)], theta_range[i], p_range[j], new_canvas)
         print('[FINISHED] Hough Transform')
 
     def draw_single_hough_line(self, points, theta, p, canvas):
         mini = points[0]
-        maxi = points[len(points)-1]
+        maxi = points[len(points) - 1]
         canvas.create_line(mini[1], mini[0], maxi[1], maxi[0], fill='red', width=5)
 
     def canny_edges(self):
@@ -1076,17 +1077,15 @@ class ImageEditor(tk.Frame):
     def draw_control_points(self, image, final_state):
         copy = np.copy(image)
         ans = np.zeros((image.shape[0], image.shape[1], 3))
-        ans[:,:,0] = copy
-        ans[:,:,1] = copy
-        ans[:,:,2] = copy
+        ans[:, :, 0] = copy
+        ans[:, :, 1] = copy
+        ans[:, :, 2] = copy
         for point in final_state:
             x, y = point
-            ans[x][y][0] = 255
+            ans[x][y][0] = 0
             ans[x][y][1] = 0
-            ans[x][y][2] = 0
+            ans[x][y][2] = 255
         return ans
-
-
 
     # Private Functions
     def __merge_rgb(self, r, g, b):
