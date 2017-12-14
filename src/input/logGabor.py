@@ -1,10 +1,7 @@
 import numpy as np
-import argparse
 import cv2
 import math
-from LogGabor import LogGabor
 from LogGabor import imread
-import matplotlib as plt
 
 def normalization(image, inner, outter):
     iris=np.zeros((360,64))
@@ -35,7 +32,7 @@ def interest_degrees(image):
                 ans[i][j]=image[i][j]
     return ans
 
-def build_filters(): #Gabor NO LogGabor
+def build_filters():
     filters = []
     ksize = 32
     for theta in np.arange(0, np.pi, np.pi / 8):
@@ -46,47 +43,22 @@ def build_filters(): #Gabor NO LogGabor
     return filters
 
 def process(img, filters):
-    accum = np.zeros_like(img)
-    # kern 0°
-    fimg0 = cv2.filter2D(img, cv2.CV_8UC3, filters[0])
-    # kern 22.5°
-    fimg1 = cv2.filter2D(img, cv2.CV_8UC3, filters[1])
-    # kern 45.0°
-    fimg2 = cv2.filter2D(img, cv2.CV_8UC3, filters[2])
-    # kern 67.5°
-    fimg3 = cv2.filter2D(img, cv2.CV_8UC3, filters[3])
-    # kern 90.0°
-    fimg4 = cv2.filter2D(img, cv2.CV_8UC3, filters[4])
-    # kern 112.5°
-    fimg5 = cv2.filter2D(img, cv2.CV_8UC3, filters[5])
-    # kern 135.0°
-    fimg6 = cv2.filter2D(img, cv2.CV_8UC3, filters[6])
-    # kern 157.5°
-    fimg7 = cv2.filter2D(img, cv2.CV_8UC3, filters[7])
-    print(fimg0.shape, fimg1.shape, fimg2.shape, fimg3.shape, fimg4.shape, fimg5.shape, fimg6.shape, fimg7.shape)
-    print(img.shape)
-    return fimg0
+    template = np.zeros_like(img)
+    for kern in filters:
+        fimg = cv2.filter2D(img, cv2.CV_8UC3, kern)
+        for i in range(img.shape[0]):
+            for j in range(img.shape[1]):
+                if fimg[i][j] == 1:
+                    template[i][j] = 1
+    return template
 
-def create_template(image): #Aun no obtiene el angulo del Feature Extraction
-    parameterfile = 'C:/Users/Josimar/PycharmProjects/ati-master/src/input/default_param.py'
-    lg = LogGabor(parameterfile)
-    lg.loggabor_image()
-    orientation = np.zeros(image.shape)
-    template = np.zeros(image.shape)
-    print(image.shape)
-    print(lg.frequency_angle())
-    print(lg.frequency_radius().shape)
-    for i in range(image.shape[0]):
-        for j in range(image.shape[1]):
-            if orientation[i][j] > 0 and orientation[i][j] < 90:
-                template[i][j]= '11'
-            if orientation[i][j] > 90 and orientation[i][j] < 180:
-                template[i][j]= '01'
-            if orientation[i][j] > 180 and orientation[i][j] < 270:
-                template[i][j]= '00'
-            if orientation[i][j] > 270 and orientation[i][j] < 360:
-                template[i][j]= '10'
-    return lg.frequency_angle()
+def ceropercent(template):
+    acumm=0
+    for i in range(template.shape[0]):
+        for j in range(template.shape[1]):
+            if template[i][j] == 1:
+                acumm += 1
+    print(acumm/(template.shape[0]*template.shape[1]))
 
 def compare_templates(basetemplate, template):
     acumm=0
@@ -96,8 +68,10 @@ def compare_templates(basetemplate, template):
            total += 1
            if basetemplate[i][j] != template [i][j]:
                acumm += 1
-    hammingdist = acumm * 1 / total
+    hammingdist = acumm / total
     return hammingdist
 
 image=imread('lena.jpg')
+ceropercent(process(image,build_filters()))
+
 
