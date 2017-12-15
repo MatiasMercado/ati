@@ -1,17 +1,18 @@
 import threading
 import time
-import cv2
+from cv2 import cv2
+# import cv2
 import matplotlib
-
-from src.input.feature_detector import FeaturesDetector
 
 matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 from src.input.util import Util
 from src.input.filter_provider import FilterProvider
+from src.input.vector_util import VectorUtil
 from src.input.provider import Provider
 from src.input.border_detectors import BorderDetector
 from PIL import ImageTk
+from src.input.feature_detector import FeaturesDetector
 import tkinter as tk
 import tkinter.ttk as ttk
 import PIL
@@ -139,7 +140,9 @@ class ImageEditor(tk.Frame):
         menu_bar.add_cascade(label='Borders', menu=borders_menu)
 
         # Features Detector Menu
-        feature_detectors_menu.add_command(label='SIFT', command=self.SIFT)
+        feature_detectors_menu.add_command(label='SIFT compare', command=self.SIFT_compare)
+        feature_detectors_menu.add_command(label='SIFT', command=self.SIFT_single)
+        feature_detectors_menu.add_command(label='Iris Detector', command=self.iris_detector)
         menu_bar.add_cascade(label='Features Detectors', menu=feature_detectors_menu)
 
         # Settings
@@ -239,7 +242,7 @@ class ImageEditor(tk.Frame):
 
         # Canny
         self.harris_threshold = tk.DoubleVar()
-        self.harris_threshold.set(0.1)
+        self.harris_threshold.set(0.008)
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
@@ -399,7 +402,8 @@ class ImageEditor(tk.Frame):
 
         # Harris
         tk.Label(settings_frame, text='Harris Threshold').grid(row=next_row(), column=2)
-        tk.Entry(settings_frame, text=self.harris_threshold, textvariable=self.harris_threshold).grid(row=curr_row(), column=3)
+        tk.Entry(settings_frame, text=self.harris_threshold, textvariable=self.harris_threshold).grid(row=curr_row(),
+                                                                                                      column=3)
 
         return settings_frame
 
@@ -848,10 +852,10 @@ class ImageEditor(tk.Frame):
         image, color, canvas = self.open_images[self.active_window.get()]
         # Someday
         # if color:
-            # gray_image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-            # print(gray_image.shape)
-            # print(gray_image)
-            # self.create_new_image(img_data=gray_image, color=color)
+        # gray_image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+        # print(gray_image.shape)
+        # print(gray_image)
+        # self.create_new_image(img_data=gray_image, color=color)
         # else:
         #     gray_image = image
         transformed_img = BorderDetector.harris_corner_detector(image=image, independent_layer=False)
@@ -881,12 +885,12 @@ class ImageEditor(tk.Frame):
         for i in range(theta_range.size):
             for j in range(p_range.size):
                 if lines[i, j] > threshold:
-                    self.draw_single_hough_line(points[(i,j)], theta_range[i], p_range[j], new_canvas)
+                    self.draw_single_hough_line(points[(i, j)], theta_range[i], p_range[j], new_canvas)
         print('[FINISHED] Hough Transform')
 
     def draw_single_hough_line(self, points, theta, p, canvas):
         mini = points[0]
-        maxi = points[len(points)-1]
+        maxi = points[len(points) - 1]
         canvas.create_line(mini[1], mini[0], maxi[1], maxi[0], fill='red', width=5)
 
     def canny_edges(self):
@@ -1053,11 +1057,71 @@ class ImageEditor(tk.Frame):
         # transformed_img = Util.to_binary(image, t)
         self.create_new_image(transformed_img)
 
-    def SIFT(self):
+    def SIFT_compare(self):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]
-        transformed_img = FeaturesDetector.SIFT(image)
+        self.wait_variable(self.active_window)
+        image2, color2, canvas2 = self.open_images[self.active_window.get()]
+        transformed_img = FeaturesDetector.SIFT(image, image2)
         self.create_new_image(transformed_img)
+
+    def SIFT_single(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        transformed_img = FeaturesDetector.SIFT_single(image)
+        self.create_new_image(transformed_img)
+
+    def iris_detector(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+
+        def select_center(event):
+            select_center.center = (event.x, event.y)
+            canvas.unbind('<ButtonPress-1>')
+            canvas.bind("<B1-Motion>", select_radius)
+            canvas.bind('<ButtonRelease-1>', select_release)
+            print(select_center.center)
+
+        def select_radius(event):
+            center_x, center_y = select_center.center
+            radius = \
+                int(np.sqrt(VectorUtil.sqr_euclidean_distance(select_center.center, (event.x, event.y))))
+            canvas.delete(select_radius.id)
+            select_radius.id = canvas.create_oval(center_x - radius, center_y - radius, center_x + radius, center_y + radius, outline='red')
+
+        def select_release(event):
+            center_x, center_y = select_center.center
+            canvas.unbind("<B1-Motion>")
+            canvas.unbind('<ButtonRelease-1>')
+            radius = \
+                int(np.sqrt(VectorUtil.sqr_euclidean_distance((center_y, center_x), (event.y, event.x))))
+            initial_state = Provider.get_circle_coordinates(radius, (center_y, center_x))
+            # transformed_img = self.draw_control_points(image, initial_state)
+            final_state = FeaturesDetector.iris_detector(image, initial_state)
+            transformed_img = self.draw_control_points(image, final_state)
+            self.create_new_image(transformed_img)
+
+        select_center.center = (0,0)
+        select_radius.radius = 0
+        select_radius.id = 0
+        canvas.bind('<ButtonPress-1>', select_center)
+
+
+    def draw_control_points(self, image, final_state):
+        width, height = image.shape
+        copy = np.copy(image)
+        ans = np.zeros((image.shape[0], image.shape[1], 3))
+        ans[:, :, 0] = copy
+        ans[:, :, 1] = copy
+        ans[:, :, 2] = copy
+        for point in final_state:
+            x, y = point
+            if 0 <= x < width and 0 <= y < height:
+                ans[x][y][0] = 0
+                ans[x][y][1] = 0
+                ans[x][y][2] = 255
+        return ans
 
     # Private Functions
     def __merge_rgb(self, r, g, b):

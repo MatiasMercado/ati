@@ -1,7 +1,7 @@
 import numpy as np
 
-from src.input.distance_util import DistanceUtil
 from src.input.util import Util
+from src.input.vector_util import VectorUtil
 
 
 class Provider:
@@ -59,26 +59,36 @@ class Provider:
         return [(Rp + m) * 255, (Gp + m) * 255, (Bp + m) * 255]
 
     @staticmethod
-    def draw_circle(size=(256,256), radius=60):
+    def draw_circle(size=(256, 256), radius=60):
         (width, height) = size
         circle = np.zeros((width, height, 3), dtype=np.short)
         center = (width / 2, height / 2)
         for x in range(width):
             for y in range(height):
                 for z in range(3):
-                    if DistanceUtil.euclidean_distance_lower_than(center, (x, y), radius):
+                    if VectorUtil.euclidean_distance_lower_than(center, (x, y), radius):
                         circle[x, y, z] = 255
         return circle
 
     @staticmethod
-    def draw_square(size=(256,256), side=50):
+    def get_circle_coordinates(radius, center, step=1):
+        (x_c, y_c) = center
+        ret = []
+        for x in range(-radius, radius, step):
+            ret.append((x + x_c, y_c + int(np.sqrt(radius * radius - x * x))))
+        for x in range(radius - 1, -radius + 1, -step):
+            ret.append((x + x_c, y_c - int(np.sqrt(radius * radius - x * x))))
+        return ret
+
+    @staticmethod
+    def draw_square(size=(256, 256), side=50):
         (width, height) = size
         square = np.zeros((width, height, 3), dtype=np.short)
         center = (width / 2, height / 2)
         for x in range(width):
             for y in range(height):
                 for z in range(3):
-                    if DistanceUtil.chebyshev_distance_lower_than(center, (x, y), side):
+                    if VectorUtil.chebyshev_distance_lower_than(center, (x, y), side):
                         square[x, y, z] = 255
         return square
 

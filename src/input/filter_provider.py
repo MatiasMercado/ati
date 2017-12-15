@@ -6,15 +6,13 @@ WEIGHTED_MEDIAN_MASK = np.matrix([[1, 2, 1],
                                   [2, 4, 2],
                                   [1, 2, 1]])
 
-
 SUSAN_MASK = np.matrix([[0, 0, 1, 1, 1, 0, 0],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [1, 1, 1, 1, 1, 1, 1],
-                         [1, 1, 1, 1, 1, 1, 1],
-                         [1, 1, 1, 1, 1, 1, 1],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 1, 1, 1, 0, 0]])
-
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [1, 1, 1, 1, 1, 1, 1],
+                        [1, 1, 1, 1, 1, 1, 1],
+                        [1, 1, 1, 1, 1, 1, 1],
+                        [0, 1, 1, 1, 1, 1, 0],
+                        [0, 0, 1, 1, 1, 0, 0]])
 
 SUSAN_BORDER_DETECTOR = 0
 SUSAN_CORNER_DETECTOR = 1
@@ -147,11 +145,11 @@ class FilterProvider:
         s = 1 - (acu / SUSAN_MASK_SIZE)
         if 0.75 - delta <= s <= 0.75 + delta and \
                 (detector_type == SUSAN_CORNER_DETECTOR or
-                         detector_type == SUSAN_BORDER_CORNER_DETECTOR):
+                 detector_type == SUSAN_BORDER_CORNER_DETECTOR):
             return SUSAN_CORNER_POINT
         elif 0.5 - delta <= s <= 0.5 + delta and \
                 (detector_type == SUSAN_BORDER_DETECTOR or
-                         detector_type == SUSAN_BORDER_CORNER_DETECTOR):
+                 detector_type == SUSAN_BORDER_CORNER_DETECTOR):
             return SUSAN_BORDER_POINT
         else:
             return 0
@@ -197,6 +195,27 @@ class FilterProvider:
         return ans
 
     @staticmethod
+    def single_point_gradient(image, position, direction, weighted=False):
+        mask = np.zeros((3, 3))
+        for x in range(3):
+            for y in range(3):
+                if x == 0:
+                    if y == 1 and weighted:
+                        mask[x][y] = 2
+                    else:
+                        mask[x][y] = 1
+                elif x == 2:
+                    if y == 1 and weighted:
+                        mask[x][y] = -2
+                    else:
+                        mask[x][y] = -1
+                else:
+                    mask[x][y] = 0
+        mask = FilterProvider.rotate_matrix(mask, direction)
+        aux = FilterProvider.__apply_mask(image, position, mask)
+        return np.abs(aux)
+
+    @staticmethod
     def border(image, weighted=False, direction=0, independent_layer=False):
         mask = np.zeros((3, 3))
         for x in range(3):
@@ -234,7 +253,8 @@ class FilterProvider:
         for i in directions:
             print(i)
             ret = Util.element_wise_operation(ret, FilterProvider.border(
-                image, weighted=weighted, direction=i, independent_layer=independent_layer), merge_function, independent_layer)
+                image, weighted=weighted, direction=i, independent_layer=independent_layer), merge_function,
+                                              independent_layer)
         return ret
 
     @staticmethod
