@@ -21,8 +21,7 @@ def normalization(image, inner, outter):
                if theta < 0:
                  theta += 360
                iris[pointradius-innerradius][theta][k]=image[i][j][k]
-               image[i][j][0]=0
-    return iris,image
+    return iris
 
 def interest_degrees(image):
     ans = np.zeros((110,34,3)) #Resize al tamaño de interes donde hay menos ruido
