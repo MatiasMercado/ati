@@ -1065,7 +1065,7 @@ class ImageEditor(tk.Frame):
         transformed_img = FeaturesDetector.SIFT(image, image2)
         self.create_new_image(transformed_img)
 
-    def SIFT_single(self):
+    def git SIFT_single(self):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = FeaturesDetector.SIFT_single(image)
@@ -1114,8 +1114,8 @@ class ImageEditor(tk.Frame):
             radius = \
                 int(np.sqrt(VectorUtil.sqr_euclidean_distance((center_y, center_x), (event.y, event.x))))
             pupil_initial_state = Provider.get_circle_coordinates(radius, (center_y, center_x))
-            final_state = FeaturesDetector.iris_detector(image, handle_iris_release.initial_state, pupil_initial_state)
-            transformed_img = self.draw_control_points(image, final_state)
+            iris, pupil = FeaturesDetector.iris_detector(image, handle_iris_release.initial_state, pupil_initial_state)
+            transformed_img = self.draw_control_points(image, iris, pupil)
             self.create_new_image(transformed_img)
 
         handle_iris_motion.id = 0
@@ -1127,14 +1127,20 @@ class ImageEditor(tk.Frame):
         handle_iris_release.initial_state = []
         canvas.bind('<ButtonPress-1>', select_circle_center(handle_iris_release, handle_iris_motion))
 
-    def draw_control_points(self, image, final_state):
+    def draw_control_points(self, image, iris, pupil):
         width, height = image.shape
         copy = np.copy(image)
         ans = np.zeros((image.shape[0], image.shape[1], 3))
         ans[:, :, 0] = copy
         ans[:, :, 1] = copy
         ans[:, :, 2] = copy
-        for point in final_state:
+        for point in iris:
+            x, y = point
+            if 0 <= x < width and 0 <= y < height:
+                ans[x][y][0] = 0
+                ans[x][y][1] = 255
+                ans[x][y][2] = 0
+        for point in pupil:
             x, y = point
             if 0 <= x < width and 0 <= y < height:
                 ans[x][y][0] = 0
