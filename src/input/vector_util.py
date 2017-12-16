@@ -1,9 +1,16 @@
+import numpy as np
+
+
 class VectorUtil:
     @staticmethod
     def sqr_euclidean_distance(p1, p2):
         (x1, y1) = p1
         (x2, y2) = p2
         return (x1 - x2) ** 2 + (y1 - y2) ** 2
+
+    @staticmethod
+    def euclidean_distance(p1, p2):
+        return np.sqrt(VectorUtil.sqr_euclidean_distance(p1, p2))
 
     @staticmethod
     def vector_abs(p):

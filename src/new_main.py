@@ -1,8 +1,9 @@
 import threading
 import time
-from cv2 import cv2
+
 # import cv2
 import matplotlib
+from cv2 import cv2
 
 matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
@@ -1065,7 +1066,7 @@ class ImageEditor(tk.Frame):
         transformed_img = FeaturesDetector.SIFT(image, image2)
         self.create_new_image(transformed_img)
 
-    def git SIFT_single(self):
+    def SIFT_single(self):
         self.wait_variable(self.active_window)
         image, color, canvas = self.open_images[self.active_window.get()]
         transformed_img = FeaturesDetector.SIFT_single(image)

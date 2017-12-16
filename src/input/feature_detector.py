@@ -2,9 +2,9 @@ import numpy as np
 from cv2 import cv2
 
 from src.input.filter_provider import FilterProvider
-from src.input.provider import Provider
+from src.input.logGabor import LogGabor
+from src.input.util import Util
 from src.input.vector_util import VectorUtil
-# from src.new_main import ImageEditor
 
 
 class FeaturesDetector:
@@ -64,6 +64,13 @@ class FeaturesDetector:
         return (p1 - 2 * x + n1) ** 2 + (p2 - 2 * y + n2) ** 2
 
     @staticmethod
+    def circleness_energy(control_point, prev_point, next_point, center):
+        cp_distane = VectorUtil.sqr_euclidean_distance(center, control_point)
+        pp_distance = VectorUtil.sqr_euclidean_distance(center, prev_point)
+        np_distance = VectorUtil.sqr_euclidean_distance(center, next_point)
+        return np.abs(cp_distane * 2 - pp_distance - np_distance)
+
+    @staticmethod
     def continuity_energy(control_point, average_distance, prev_point):
         return np.abs(average_distance - np.sqrt(VectorUtil.sqr_euclidean_distance(control_point, prev_point)))
 
@@ -112,18 +119,23 @@ class FeaturesDetector:
         ])
 
     @staticmethod
-    def iris_detector(image, initial_state, alpha=0.5, beta=0.5, gamma=0.5, iterations=10):
-        length = len(initial_state)
-        # image_editor = ImageEditor()
+    def iris_detector(image, initial_state_iris, initial_state_pupil, alpha=0.75, beta=0.75, gamma=0.9, iterations=1):
+        iris_length = len(initial_state_iris)
+        pupil_length = len(initial_state_pupil)
+        original = image
+        image = Util.load_image('./input/myCircles/ojo-anisotropic-60-0-3.jpg')
+        image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
 
+        # image_editor = ImageEditor()
+        print("Detecting pupil")
         for i in range(iterations):
-            for index in range(length):
-                last = initial_state[index]
-                initial_state[index] = FeaturesDetector.find_lowest_energy(
-                    image, initial_state[index], initial_state[(index + 1) % length],
-                    initial_state[(index - 1) % length], alpha, beta, gamma,
-                    FeaturesDetector.average_distance(initial_state), True
+            for index in range(pupil_length):
+                initial_state_pupil[index] = FeaturesDetector.find_lowest_energy(
+                    image, initial_state_pupil[index], initial_state_pupil[(index + 1) % pupil_length],
+                    initial_state_pupil[(index - 1) % pupil_length], alpha, beta, gamma,
+                    FeaturesDetector.average_distance(initial_state_pupil), True
                 )
+
                 # if np.abs(last[0] - initial_state[index][0]) > 1 or np.abs(last[1] - initial_state[index][1]) > 1:
                 #     print(last)
                 #     print(initial_state[index])
@@ -133,15 +145,45 @@ class FeaturesDetector:
                 #     initial_state[(index - 1) % length], alpha, beta, gamma,
                 #     FeaturesDetector.average_distance(initial_state), False
                 # )
-            # if i % 10 == 0:
-            #     transformed_image = image_editor.draw_control_points(image, initial_state)
-            #     cv2.imwrite('myCircle-' + str(i) + '.jpg', transformed_image)
-            # print(i)
+            if i % 10 == 0:
+                # transformed_image = image_editor.draw_control_points(image, initial_state)
+                # cv2.imwrite('./myCircles/myCircle-' + str(i) + '.jpg', transformed_image)
+                beta += 0.01
+                print(i)
 
-        return initial_state
+        print("Detecting iris")
+        for i in range(iterations):
+            for index in range(iris_length):
+                initial_state_iris[index] = FeaturesDetector.find_lowest_energy(
+                    image, initial_state_iris[index], initial_state_iris[(index + 1) % iris_length],
+                    initial_state_iris[(index - 1) % iris_length], alpha, beta, gamma,
+                    FeaturesDetector.average_distance(initial_state_iris), True
+                )
+
+                # if np.abs(last[0] - initial_state[index][0]) > 1 or np.abs(last[1] - initial_state[index][1]) > 1:
+                #     print(last)
+                #     print(initial_state[index])
+
+                # initial_state[index] = FeaturesDetector.find_lowest_energy(
+                #     image, initial_state[index], initial_state[(index + 1) % length],
+                #     initial_state[(index - 1) % length], alpha, beta, gamma,
+                #     FeaturesDetector.average_distance(initial_state), False
+                # )
+            if i % 10 == 0:
+                # transformed_image = image_editor.draw_control_points(image, initial_state)
+                # cv2.imwrite('./myCircles/myCircle-' + str(i) + '.jpg', transformed_image)
+                beta += 0.01
+                print(i)
+        # print('finished')
+        iris = LogGabor.normalization(original, initial_state_pupil, initial_state_iris)
+        snipped_iris = LogGabor.interest_degrees(iris)
+        filters = LogGabor.build_filters()
+        template = LogGabor.process(snipped_iris, filters)
+        print(template)
+        return initial_state_iris, initial_state_pupil
 
     @staticmethod
-    def find_lowest_energy(image, position, next_point, prev_point, alpha, beta, gamma, avg_distance, first=True):
+    def find_lowest_energy(image, position, next_point, prev_point, alpha_v, beta_v, gamma_v, avg_distance, first=True):
         width, height = image.shape
         # direction = {
         #     (0, 1): 0,
@@ -173,11 +215,10 @@ class FeaturesDetector:
             for y_diff in [-1, 0, 1]:
                 current_x = x + x_diff
                 current_y = y + y_diff
-                if (width > current_x >= 0 and height > current_y >= 0 and not
-                (x_diff == 0 and y_diff == 0)):
+                if width > current_x >= 0 and height > current_y >= 0 and not (x_diff == 0 and y_diff == 0):
                     current_energies = FeaturesDetector.__get_total_energy(
-                        image, (current_x, current_y), next_point, prev_point, alpha, beta,
-                        gamma, direction[(x_diff, y_diff)], avg_distance, first)
+                        image, (current_x, current_y), next_point, prev_point, alpha_v, beta_v,
+                        gamma_v, direction[(x_diff, y_diff)], avg_distance, first)
 
                     energies.append(((current_x, current_y), current_energies))
                     max_continuity = np.max([current_energies[0], max_continuity])
@@ -187,10 +228,15 @@ class FeaturesDetector:
 
         lowest_energy = ((0, 0), 100000)
         for energy in energies:
-            current_normalized_gradient = ((energy[1][2] - min_gradient) / (max_gradient - min_gradient)) if (
-                                                                                                                     max_gradient - min_gradient) != 0 else 0
-            current_energy = (energy[1][0] / max_continuity * alpha + energy[1][1] / max_curvature * beta
-                              - current_normalized_gradient * gamma)
+            if (max_gradient - min_gradient) != 0:
+                current_normalized_gradient = (energy[1][2] - min_gradient) / (max_gradient - min_gradient)
+            else:
+                current_normalized_gradient = 0
+            # current_normalized_gradient = ((energy[1][2] - min_gradient) / (max_gradient - min_gradient)) if (
+            #     max_gradient - min_gradient) != 0 else 0
+
+            current_energy = (energy[1][0] / max_continuity * alpha_v + energy[1][1] / max_curvature * beta_v
+                              - current_normalized_gradient * gamma_v)
             if current_energy < lowest_energy[1]:
                 lowest_energy = (energy[0], current_energy)
 
@@ -208,13 +254,83 @@ class FeaturesDetector:
 
         return continuity_energy, curvature_energy, image_energy
 
-
-# image = Provider.draw_circle()
-# gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-# initial_state = Provider.get_circle_coordinates(55, (128, 128))
-# print(initial_state)
-# control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=100)
+# def process_input(params):
+#     image_editor = ImageEditor()
+#     image = Util.load_image('./myCircles/ojo-anisotropic-60-0-3.jpg')
+#
+#     gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+#
+#     alpha_param, beta_param, gamma_param = params
+#     initial_state = Provider.get_circle_coordinates(70, (124, 175))
+#     control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=1,
+#                                                     alpha=alpha_param, beta=beta_param, gamma=gamma_param)
+#     transformed_image = image_editor.draw_control_points(gray, control_points)
+#     cv2.imwrite('./myCircles/result-' + str(alpha_param) + '-' + str(beta_param) + '-' + str(gamma_param) + '.jpg',
+#                 transformed_image)
+#
+#
+# num_cores = multiprocessing.cpu_count()
+#
+# inputs = []
+# for a in np.arange(0.3, 0.9, 0.2):
+#     for b in np.arange(0.7, 1.1, 0.05):
+#         for g in np.arange(0.7, 1.1, 0.1):
+#             inputs.append((a, b, g))
+#
+#
+# class myThread(threading.Thread):
+#     def __init__(self, params):
+#         super().__init__()
+#         self.params = params
+#
+#     def run(self):
+#         print("Starting " + str(self.params))
+#         image = Util.load_image('./myCircles/ojo-anisotropic-60-0-3.jpg')
+#
+#         gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+#
+#         alpha_param, beta_param, gamma_param = self.params
+#         initial_state = Provider.get_circle_coordinates(70, (124, 175))
+#         control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=80,
+#                                                         alpha=alpha_param, beta=beta_param, gamma=gamma_param)
+#         transformed_image = image_editor.draw_control_points(gray, control_points)
+#         cv2.imwrite('./myCircles/result-' + str(alpha_param) + '-' + str(beta_param) + '-' + str(gamma_param) + '.jpg',
+#                     transformed_image)
+#         print("Exiting " + str(self.params))
+#
+#
+# # threads = []
 # image_editor = ImageEditor()
+#
+# # for input_param in inputs:
+# #     t = myThread(input_param)
+# #     t.start()
+# #     threads.append(t)
+# #
+# # count = 0
+# # for t in threads:
+# #     count += 1
+# #     t.join()
+# #     print(str(count))
+#
+# # print('Finished')
+# # image_editor = ImageEditor()
+# # image = Util.load_image('ojo.bmp')
+# image = Util.load_image('./myCircles/ojo-anisotropic-60-0-3.jpg')
+# # # image = Provider.draw_circle()
+# # image = FilterProvider.median_filter(image, independent_layer=True)
+# # image = FilterProvider.anisotropic_filter(image, 60, 0, 3, independent_layer=True)
+# # cv2.imwrite('./myCircles/ojo-anisotropic-60-0-3.jpg', image)
+# gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+#
+# # results = Parallel(n_jobs=num_cores)(delayed(process_input)(i) for i in inputs)
+# #
+# # initial_state = Provider.get_circle_coordinates(63, (124, 174))
+# initial_state = Provider.get_circle_coordinates(70, (124, 175))
+# # # print(initial_state)
+# control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=140, alpha=0.7, beta=0.75, gamma=0.9)
+# # control_points = initial_state
 # transformed_image = image_editor.draw_control_points(gray, control_points)
-# print(control_points)
-# cv2.imwrite('myCircle.jpg', transformed_image)
+# # image_editor.create_new_image(transformed_image)
+# # print(control_points)
+# cv2.imwrite('./myCircles/myCircle-0.7-0.75-0.9.jpg', transformed_image)
