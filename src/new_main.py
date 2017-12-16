@@ -1076,37 +1076,56 @@ class ImageEditor(tk.Frame):
         image, color, canvas = self.open_images[self.active_window.get()]
         image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
 
-        def select_center(event):
-            select_center.center = (event.x, event.y)
-            canvas.unbind('<ButtonPress-1>')
-            canvas.bind("<B1-Motion>", select_radius)
-            canvas.bind('<ButtonRelease-1>', select_release)
-            print(select_center.center)
+        def select_circle_center(handle_select_release, handle_select_radius):
+            def select_center(event):
+                select_circle_center.center = (event.x, event.y)
+                canvas.unbind('<ButtonPress-1>')
+                canvas.bind("<B1-Motion>", handle_select_radius)
+                canvas.bind('<ButtonRelease-1>', handle_select_release)
+            return select_center
 
-        def select_radius(event):
-            center_x, center_y = select_center.center
+        def handle_iris_motion(event):
+            center_x, center_y = select_circle_center.center
             radius = \
-                int(np.sqrt(VectorUtil.sqr_euclidean_distance(select_center.center, (event.x, event.y))))
-            canvas.delete(select_radius.id)
-            select_radius.id = canvas.create_oval(center_x - radius, center_y - radius, center_x + radius, center_y + radius, outline='red')
+                int(np.sqrt(VectorUtil.sqr_euclidean_distance(select_circle_center.center, (event.x, event.y))))
+            canvas.delete(handle_iris_motion.id)
+            handle_iris_motion.id = canvas.create_oval(center_x - radius, center_y - radius, center_x + radius, center_y + radius, outline='#eef442')
 
-        def select_release(event):
-            center_x, center_y = select_center.center
+        def handle_pupil_motion(event):
+            center_x, center_y = select_circle_center.center
+            radius = \
+                int(np.sqrt(VectorUtil.sqr_euclidean_distance(select_circle_center.center, (event.x, event.y))))
+            canvas.delete(handle_pupil_motion.id)
+            handle_pupil_motion.id = canvas.create_oval(center_x - radius, center_y - radius, center_x + radius, center_y + radius, outline='#d8112f')
+
+        def handle_iris_release(event):
+            center_x, center_y = select_circle_center.center
             canvas.unbind("<B1-Motion>")
             canvas.unbind('<ButtonRelease-1>')
             radius = \
                 int(np.sqrt(VectorUtil.sqr_euclidean_distance((center_y, center_x), (event.y, event.x))))
-            initial_state = Provider.get_circle_coordinates(radius, (center_y, center_x))
-            # transformed_img = self.draw_control_points(image, initial_state)
-            final_state = FeaturesDetector.iris_detector(image, initial_state)
+            handle_iris_release.initial_state = Provider.get_circle_coordinates(radius, (center_y, center_x))
+            canvas.bind('<ButtonPress-1>', select_circle_center(handle_pupil_release, handle_pupil_motion))
+
+        def handle_pupil_release(event):
+            center_x, center_y = select_circle_center.center
+            canvas.unbind("<B1-Motion>")
+            canvas.unbind('<ButtonRelease-1>')
+            radius = \
+                int(np.sqrt(VectorUtil.sqr_euclidean_distance((center_y, center_x), (event.y, event.x))))
+            pupil_initial_state = Provider.get_circle_coordinates(radius, (center_y, center_x))
+            final_state = FeaturesDetector.iris_detector(image, handle_iris_release.initial_state, pupil_initial_state)
             transformed_img = self.draw_control_points(image, final_state)
             self.create_new_image(transformed_img)
 
-        select_center.center = (0,0)
-        select_radius.radius = 0
-        select_radius.id = 0
-        canvas.bind('<ButtonPress-1>', select_center)
-
+        handle_iris_motion.id = 0
+        handle_iris_motion.radius = 0
+        handle_pupil_motion.id = 0
+        handle_pupil_motion.radius = 0
+        select_circle_center.center = (0,0)
+        select_circle_center.center = (0,0)
+        handle_iris_release.initial_state = []
+        canvas.bind('<ButtonPress-1>', select_circle_center(handle_iris_release, handle_iris_motion))
 
     def draw_control_points(self, image, final_state):
         width, height = image.shape
