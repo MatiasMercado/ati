@@ -1017,7 +1017,7 @@ class ImageEditor(tk.Frame):
                                                 self.deltaT.get())
             print('Global threshold: {}'.format(t))
             aux.append(Util.to_binary(image[:, :, d], t))
-            if (not color):
+            if not color:
                 aux.append(aux[0])
                 aux.append(aux[0])
                 break

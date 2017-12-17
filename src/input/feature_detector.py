@@ -3,7 +3,6 @@ from cv2 import cv2
 
 from src.input.filter_provider import FilterProvider
 from src.input.logGabor import LogGabor
-from src.input.util import Util
 from src.input.vector_util import VectorUtil
 
 
@@ -123,8 +122,8 @@ class FeaturesDetector:
         iris_length = len(initial_state_iris)
         pupil_length = len(initial_state_pupil)
         original = image
-        image = Util.load_image('./input/myCircles/ojo-anisotropic-60-0-3.jpg')
-        image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+        # image = Util.load_image('./input/myCircles/ojo-anisotropic-60-0-3.jpg')
+        # image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
 
         # image_editor = ImageEditor()
         print("Detecting pupil")
@@ -175,19 +174,17 @@ class FeaturesDetector:
                 beta += 0.01
                 print(i)
         # print('finished')
-        iris = LogGabor.normalization(original, initial_state_pupil, initial_state_iris)
-        print('iris')
-        print(iris)
-        cv2.imwrite('./input/result/iris.jpg', iris)
-        snipped_iris = LogGabor.interest_degrees(iris)
-        print('snipped_iris')
-        cv2.imwrite('./input/result/snipped.jpg', snipped_iris)
-        print(snipped_iris)
         filters = LogGabor.build_filters()
-        template = LogGabor.process(snipped_iris, filters)
+        iris = LogGabor.normalization(original, initial_state_pupil, initial_state_iris)
+        version = 'philip'
+        print('iris')
+        cv2.imwrite('./input/result/iris_' + str(version) + '.jpg', iris)
+        template = LogGabor.process(iris, filters)
         print('template')
-        print(template)
-        cv2.imwrite('./input/result/template.jpg', template)
+        cv2.imwrite('./input/result/template_' + str(version) + '.jpg', template)
+        snipped_template = LogGabor.interest_degrees(template)
+        print('snipped_template')
+        cv2.imwrite('./input/result/snipped_' + str(version) + '.jpg', snipped_template)
 
         return initial_state_iris, initial_state_pupil
 

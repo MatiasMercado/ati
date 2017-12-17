@@ -49,7 +49,7 @@ class LogGabor:
     @staticmethod
     def build_filters():
         filters = []
-        ksize = 4
+        ksize = 32
         print('kernels:')
         for theta in np.arange(0, np.pi, np.pi / 8):
             # print(math.degrees(theta))
@@ -65,14 +65,21 @@ class LogGabor:
         print('img')
         print(img)
         template = np.zeros_like(img)
+        it = 0
+        print('length of builders:')
+        print(len(filters))
         for kern in filters:
             fimg = cv2.filter2D(img, cv2.CV_8UC3, kern)
+            # cv2.imwrite('/Users/jcl/PycharmProjects/ati/ati/src/input/result/t-' + str(it) + '.jpg', fimg)
+            it += 1
             for i in range(img.shape[0]):
                 for j in range(img.shape[1]):
                     # if fimg[i][j] != 0:
                     # print("fimg[i][j]: " + str(fimg[i][j]))
-                    if 0 <= fimg[i][j] <= 1:
+                    if 0 < fimg[i][j] <= 1:
                         template[i][j] = 255
+                    # template[i][j] = fimg[i][j]
+
         return template
 
     @staticmethod
@@ -88,19 +95,51 @@ class LogGabor:
     @staticmethod
     def compare_templates(basetemplate, template):
         acumm = 0
-        total = basetemplate.shape[0] * basetemplate.shape[1]
+        total = 0
         for i in range(basetemplate.shape[0]):
             for j in range(basetemplate.shape[1]):
-                total += 1
-                if basetemplate[i][j] != template[i][j]:
+                comp = LogGabor.__compare_neighbors((i, j), (i, j), basetemplate, template)
+                if comp[0]:
+                    total += 1
+                if comp[1]:
                     acumm += 1
         hammingdist = acumm / total
         return hammingdist
 
+    @staticmethod
+    def __compare_neighbors(p1, p2, t1, t2, neighborhood=0):
+        p1_value = False
+        p2_value = False
+        for i in range(np.max([0, p1[0] - neighborhood]), np.min([t1.shape[0] - 1, p1[0] + neighborhood]) + 1):
+            for j in range(np.max([0, p1[1] - neighborhood]), np.min([t1.shape[1] - 1, p1[1] + neighborhood]) + 1):
+                if t1[i][j] != 0:
+                    p1_value = True
+                    break
+        for i in range(np.max([0, p2[0] - neighborhood]), np.min([t2.shape[0] - 1, p2[0] + neighborhood]) + 1):
+            for j in range(np.max([0, p2[1] - neighborhood]), np.min([t2.shape[1] - 1, p2[1] + neighborhood]) + 1):
+                if t2[i][j] != 0:
+                    p2_value = True
+                    break
+        return p1_value or p2_value, p1_value and p2_value
 
-image = Util.load_image('src/input/result/iris.jpg')
-image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-filters = LogGabor.build_filters()
+
+# image = Util.load_image('src/input/LENA.RAW')
+# image = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/iris.jpg')
+# image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+# filters = LogGabor.build_filters()
 #
-image = LogGabor.process(image, filters)
-cv2.imwrite('src/input/lena-gabor.jpg', image)
+# image = LogGabor.process(image, filters)
+#
+# cv2.imwrite('src/input/lena-gabor.jpg', image)
+
+def compare(name1, name2):
+    template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
+    template1 = cv2.cvtColor(template1.astype('B'), cv2.COLOR_BGR2GRAY)
+    template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name2) + '.jpg')
+    template2 = cv2.cvtColor(template2.astype('B'), cv2.COLOR_BGR2GRAY)
+
+    print(LogGabor.compare_templates(template1, template2))
+
+#
+# compare(4, 5)
+# compare(4, 'philip')
