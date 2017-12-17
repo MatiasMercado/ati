@@ -176,10 +176,19 @@ class FeaturesDetector:
                 print(i)
         # print('finished')
         iris = LogGabor.normalization(original, initial_state_pupil, initial_state_iris)
+        print('iris')
+        print(iris)
+        cv2.imwrite('./input/result/iris.jpg', iris)
         snipped_iris = LogGabor.interest_degrees(iris)
+        print('snipped_iris')
+        cv2.imwrite('./input/result/snipped.jpg', snipped_iris)
+        print(snipped_iris)
         filters = LogGabor.build_filters()
         template = LogGabor.process(snipped_iris, filters)
+        print('template')
         print(template)
+        cv2.imwrite('./input/result/template.jpg', template)
+
         return initial_state_iris, initial_state_pupil
 
     @staticmethod
