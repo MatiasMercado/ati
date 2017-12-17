@@ -52,26 +52,23 @@ class LogGabor:
         filters = []
         ksize = 7
         print('kernels:')
-        for theta in np.arange(0, np.pi, np.pi / 8):
-            # print(math.degrees(theta))
-            kern = cv2.getGaborKernel((ksize, ksize), 4.0, theta, 10.0, 0.5, 0, ktype=cv2.CV_32F)
-            print(kern)
-            kern /= 1.5 * kern.sum()
-            print(kern)
-            filters.append(kern)
+        for theta in np.arange(0, np.pi , np.pi/4):
+            for f in [2, 4, 8, 16, 32, 64]:
+                kern = cv2.getGaborKernel((ksize, ksize), 4.0, theta, f, 0.5, 0, ktype=cv2.CV_32F)
+                # kern /= 1.5 * kern.sum()
+                filters.append(kern)
         return filters
 
     @staticmethod
     def process(img, filters):
-        print('img')
-        print(img)
-        template = np.zeros_like(img)
-        print('length of builders:')
-        print(len(filters))
+        features = []
         for kern in filters:
-            fimg = cv2.filter2D(img, cv2.CV_8UC3, kern)
-            np.maximum(template, fimg, template)
-        return template
+            filteredImage = cv2.filter2D(img, cv2.CV_8UC3, kern)
+            mean = np.mean(filteredImage)
+            std = np.std(filteredImage)
+            features.push((mean, std))
+            # np.maximum(template, fimg, template)
+        return features
 
     @staticmethod
     def ceropercent(template):
@@ -127,8 +124,10 @@ class LogGabor:
 # filters = LogGabor.build_filters()
 # template = LogGabor.process(image, filters)
 # cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/iris_philip_gabor.jpg', template)
-diana = Provider.draw_diana()
-cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/diana.jpg', diana)
+
+# diana = Provider.draw_diana()
+# diana_normalized = LogGabor.normalization(diana, , )
+# cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/diana.jpg', diana_normalized)
 
 def compare(name1, name2):
     template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
