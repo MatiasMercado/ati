@@ -71,6 +71,21 @@ class Provider:
         return circle
 
     @staticmethod
+    def draw_diana(size=(256, 256), radiusList=[(40, 255), (50, 100), (70, 150), (80, 200)]):
+        (height, width) = size
+        circle = np.zeros((height, width, 3), dtype=np.short)
+        center = (height / 2, width / 2)
+        for x in range(width):
+            for y in range(height):
+                for z in range(3):
+                    for radius in radiusList:
+                        if VectorUtil.euclidean_distance_lower_than(center, (x, y), radius[0]):
+                            circle[x, y, z] = radius[1]
+                            break
+        return circle
+
+
+    @staticmethod
     def get_circle_coordinates(radius, center, step=0.05):
         (x_c, y_c) = center
         ret = []

@@ -3,6 +3,7 @@ import math
 import cv2
 import numpy as np
 
+from input.provider import Provider
 from src.input.util import Util
 
 
@@ -121,11 +122,13 @@ class LogGabor:
 # image = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/iris.jpg')
 
 
-image = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/iris_philip.jpg')
-image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-filters = LogGabor.build_filters()
-template = LogGabor.process(image, filters)
-cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/iris_philip_gabor.jpg', template)
+# image = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/iris_philip.jpg')
+# image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+# filters = LogGabor.build_filters()
+# template = LogGabor.process(image, filters)
+# cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/iris_philip_gabor.jpg', template)
+diana = Provider.draw_diana()
+cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/diana.jpg', diana)
 
 def compare(name1, name2):
     template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
