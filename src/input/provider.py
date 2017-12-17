@@ -73,14 +73,14 @@ class Provider:
     @staticmethod
     def draw_diana(size=(256, 256), radiusList=[(40, 255), (50, 100), (70, 150), (80, 200)]):
         (height, width) = size
-        circle = np.zeros((height, width, 3), dtype=np.short)
+        circle = np.zeros((height, width), dtype=np.short)
         center = (height / 2, width / 2)
         for x in range(width):
             for y in range(height):
-                for z in range(3):
+                # for z in range(3):
                     for radius in radiusList:
                         if VectorUtil.euclidean_distance_lower_than(center, (x, y), radius[0]):
-                            circle[x, y, z] = radius[1]
+                            circle[x, y] = radius[1]
                             break
         return circle
 

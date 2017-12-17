@@ -118,12 +118,14 @@ class FeaturesDetector:
         ])
 
     @staticmethod
-    def iris_detector(image, initial_state_iris, initial_state_pupil, alpha=0.75, beta=0.75, gamma=0.9, iterations=1):
+    def iris_detector(image, initial_state_iris, initial_state_pupil, alpha=0.75, beta=0.75, gamma=0.9, iterations=0):
         iris_length = len(initial_state_iris)
         pupil_length = len(initial_state_pupil)
         original = image
         # image = Util.load_image('./input/myCircles/ojo-anisotropic-60-0-3.jpg')
         # image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+        # initial_state_iris = Provider.get_circle_coordinates(80, (128, 128))
+        # initial_state_pupil = Provider.get_circle_coordinates(40, (128, 128))
 
         # image_editor = ImageEditor()
         print("Detecting pupil")
@@ -176,7 +178,7 @@ class FeaturesDetector:
         # print('finished')
         filters = LogGabor.build_filters()
         iris = LogGabor.normalization(original, initial_state_pupil, initial_state_iris)
-        version = 'philip'
+        version = '2'
         print('iris')
         cv2.imwrite('./input/result/iris_' + str(version) + '.jpg', iris)
         template = LogGabor.process(iris, filters)

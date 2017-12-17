@@ -2,8 +2,8 @@ import math
 
 import cv2
 import numpy as np
-
 from input.provider import Provider
+
 from src.input.util import Util
 
 
@@ -66,7 +66,7 @@ class LogGabor:
             filteredImage = cv2.filter2D(img, cv2.CV_8UC3, kern)
             mean = np.mean(filteredImage)
             std = np.std(filteredImage)
-            features.push((mean, std))
+            features.append((mean, std))
             # np.maximum(template, fimg, template)
         return features
 
@@ -95,6 +95,26 @@ class LogGabor:
         return hammingdist
 
     @staticmethod
+    def compare_templates_euclidean(t1, t2):
+        acu = 0
+        width, height = t1.shape
+        for i in range(width):
+            for j in range(height):
+                acu += (t1[i][j] - t2[i][j]) ** 4
+        return np.sqrt(acu)
+
+    @staticmethod
+    def compare_templates_threshold(t1, t2, threshold=25):
+        acu = 0
+        width, height = t1.shape
+        total = width * height
+        for i in range(width):
+            for j in range(height):
+                if np.abs(t1[i][j] - t2[i][j]) <= threshold:
+                    acu += 1
+        return acu / total
+
+    @staticmethod
     def __compare_neighbors(p1, p2, t1, t2, neighborhood=0):
         p1_value = False
         p2_value = False
@@ -110,6 +130,14 @@ class LogGabor:
                     break
         return p1_value or p2_value, p1_value and p2_value
 
+    @staticmethod
+    def compare_templates_w_euclidean(f1, f2):
+        acu = 0
+        for i in range(len(f1)):
+            acu += ((f1[0] - f2[0]) ** 2) / (f1[1] ** 2)
+        return acu
+
+
 
 # image = Util.load_image('src/input/LENA.RAW')
 # image = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/iris.jpg')
@@ -117,7 +145,6 @@ class LogGabor:
 # filters = LogGabor.build_filters()
 #
 # image = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/iris.jpg')
-
 
 # image = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/iris_philip.jpg')
 # image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
@@ -130,13 +157,26 @@ class LogGabor:
 # cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/diana.jpg', diana_normalized)
 
 def compare(name1, name2):
-    template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
+    filters = LogGabor.build_filters()
+
+    template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/iris_' + str(name1) + '_gabor.jpg')
     template1 = cv2.cvtColor(template1.astype('B'), cv2.COLOR_BGR2GRAY)
-    template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name2) + '.jpg')
+    template1 = Provider.equalize_histogram(template1)
+    features1 = LogGabor.process(template1, filters)
+
+    template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/iris_' + str(name2) + '_gabor.jpg')
     template2 = cv2.cvtColor(template2.astype('B'), cv2.COLOR_BGR2GRAY)
+    template2 = Provider.equalize_histogram(template2)
+    features2 = LogGabor.process(template2, filters)
 
-    print(LogGabor.compare_templates(template1, template2))
+    print(LogGabor.compare_templates_w_euclidean(features1, features2))
 
-#
+    # print('euclidean')
+    # print(LogGabor.compare_templates_euclidean(template1, template2))
+    # print('threshold')
+    # print(LogGabor.compare_templates_threshold(template1, template2, 1))
+
+
 # compare(4, 5)
 # compare(4, 'philip')
+# compare(5, 'philip')
