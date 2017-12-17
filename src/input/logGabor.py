@@ -49,7 +49,7 @@ class LogGabor:
     @staticmethod
     def build_filters():
         filters = []
-        ksize = 32
+        ksize = 7
         print('kernels:')
         for theta in np.arange(0, np.pi, np.pi / 8):
             # print(math.degrees(theta))
@@ -65,21 +65,11 @@ class LogGabor:
         print('img')
         print(img)
         template = np.zeros_like(img)
-        it = 0
         print('length of builders:')
         print(len(filters))
         for kern in filters:
             fimg = cv2.filter2D(img, cv2.CV_8UC3, kern)
-            # cv2.imwrite('/Users/jcl/PycharmProjects/ati/ati/src/input/result/t-' + str(it) + '.jpg', fimg)
-            it += 1
-            for i in range(img.shape[0]):
-                for j in range(img.shape[1]):
-                    # if fimg[i][j] != 0:
-                    # print("fimg[i][j]: " + str(fimg[i][j]))
-                    if 0 < fimg[i][j] <= 1:
-                        template[i][j] = 255
-                    # template[i][j] = fimg[i][j]
-
+            np.maximum(template, fimg, template)
         return template
 
     @staticmethod
@@ -128,9 +118,14 @@ class LogGabor:
 # image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
 # filters = LogGabor.build_filters()
 #
-# image = LogGabor.process(image, filters)
-#
-# cv2.imwrite('src/input/lena-gabor.jpg', image)
+# image = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/iris.jpg')
+
+
+image = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/iris_philip.jpg')
+image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
+filters = LogGabor.build_filters()
+template = LogGabor.process(image, filters)
+cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/iris_philip_gabor.jpg', template)
 
 def compare(name1, name2):
     template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
