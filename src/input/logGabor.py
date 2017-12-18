@@ -133,13 +133,15 @@ class LogGabor:
         return p1_value or p2_value, p1_value and p2_value
 
     @staticmethod
-    def compare_templates_w_euclidean(f1, f2, threshold=0.7):
+    def compare_templates_w_euclidean(f1, f2, threshold=0.7, name1='image1', name2='image2'):
         acu = 0
         for i in range(len(f1)):
             if f1[i][1] != 0:
                 acu += ((f1[i][0] - f2[i][0]) ** 2) / (f1[i][1] ** 2)
         print('comparison result:')
         print(acu)
+        with open("log.txt", "a") as log_file:
+            log_file.write(str(name1) + ' - ' + str(name2) + ' => ' + str(acu))
         return acu < threshold
 
 
