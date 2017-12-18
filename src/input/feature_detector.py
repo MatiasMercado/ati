@@ -137,15 +137,6 @@ class FeaturesDetector:
                     FeaturesDetector.average_distance(initial_state_pupil), True
                 )
 
-                # if np.abs(last[0] - initial_state[index][0]) > 1 or np.abs(last[1] - initial_state[index][1]) > 1:
-                #     print(last)
-                #     print(initial_state[index])
-
-                # initial_state[index] = FeaturesDetector.find_lowest_energy(
-                #     image, initial_state[index], initial_state[(index + 1) % length],
-                #     initial_state[(index - 1) % length], alpha, beta, gamma,
-                #     FeaturesDetector.average_distance(initial_state), False
-                # )
             if i % 10 == 0:
                 # transformed_image = image_editor.draw_control_points(image, initial_state)
                 # cv2.imwrite('./myCircles/myCircle-' + str(i) + '.jpg', transformed_image)
@@ -161,22 +152,12 @@ class FeaturesDetector:
                     FeaturesDetector.average_distance(initial_state_iris), True
                 )
 
-                # if np.abs(last[0] - initial_state[index][0]) > 1 or np.abs(last[1] - initial_state[index][1]) > 1:
-                #     print(last)
-                #     print(initial_state[index])
-
-                # initial_state[index] = FeaturesDetector.find_lowest_energy(
-                #     image, initial_state[index], initial_state[(index + 1) % length],
-                #     initial_state[(index - 1) % length], alpha, beta, gamma,
-                #     FeaturesDetector.average_distance(initial_state), False
-                # )
             if i % 10 == 0:
                 # transformed_image = image_editor.draw_control_points(image, initial_state)
                 # cv2.imwrite('./myCircles/myCircle-' + str(i) + '.jpg', transformed_image)
                 beta += 0.01
                 print(i)
-        # print('finished')
-        # filters = LogGabor.build_filters()
+        filters = LogGabor.build_filters(9)
         iris = LogGabor.normalization(original, initial_state_pupil, initial_state_iris)
         version = 'philip'
         print('iris')
@@ -184,26 +165,14 @@ class FeaturesDetector:
         snipped_iris = LogGabor.interest_degrees(iris)
         print('snipped_iris')
         cv2.imwrite('./input/result/snipped_' + str(version) + '.jpg', snipped_iris)
-        # template = LogGabor.process(snipped_iris, filters)
-        # print('template')
-        # cv2.imwrite('./input/result/template_' + str(version) + '.jpg', template)
-        #
+        features = LogGabor.process(snipped_iris, filters)
 
-        return initial_state_iris, initial_state_pupil
+        return features, initial_state_iris, initial_state_pupil
 
     @staticmethod
     def find_lowest_energy(image, position, next_point, prev_point, alpha_v, beta_v, gamma_v, avg_distance, first=True):
         width, height = image.shape
-        # direction = {
-        #     (0, 1): 0,
-        #     (1, 1): 3,
-        #     (1, 0): 2,
-        #     (1, -1): 1,
-        #     (0, -1): 0,
-        #     (-1, -1): 3,
-        #     (-1, 0): 2,
-        #     (-1, 1): 1,
-        # }
+
         direction = {
             (-1, 0): 0,
             (-1, 1): 1,
