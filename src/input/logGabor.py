@@ -133,7 +133,7 @@ class LogGabor:
         return p1_value or p2_value, p1_value and p2_value
 
     @staticmethod
-    def compare_templates_w_euclidean(f1, f2, threshold=0.7, name1='image1', name2='image2'):
+    def compare_templates_w_euclidean(f1, f2, name1='image1', name2='image2', threshold=0.7):
         acu = 0
         for i in range(len(f1)):
             if f1[i][1] != 0:

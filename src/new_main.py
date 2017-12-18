@@ -1158,7 +1158,7 @@ class ImageEditor(tk.Frame):
         image, color, canvas = self.open_images[self.active_window.get()]
         self.wait_variable(self.active_window)
         image2, color2, canvas2 = self.open_images[self.active_window.get()]
-        equals = LogGabor.compare_templates_w_euclidean(canvas.features, canvas2.features)
+        equals = LogGabor.compare_templates_w_euclidean(canvas.features, canvas2.features, self.active_window.get(), self.active_window.get())
 
     # Private Functions
     def __merge_rgb(self, r, g, b):
