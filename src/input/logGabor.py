@@ -135,13 +135,12 @@ class LogGabor:
     @staticmethod
     def compare_templates_w_euclidean(f1, f2):
         acu = 0
-        # print('wrong indexes:')
         for i in range(len(f1)):
             if f1[i][1] != 0:
                 acu += ((f1[i][0] - f2[i][0]) ** 2) / (f1[i][1] ** 2)
-            # else:
-            # print(i)
-        return acu
+        print('comparison result:')
+        print(acu)
+        return acu < 0.7
 
 
 # image = Util.load_image('src/input/LENA.RAW')
