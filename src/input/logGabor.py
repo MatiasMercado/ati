@@ -2,8 +2,8 @@ import math
 
 import cv2
 import numpy as np
-from input.provider import Provider
 
+from src.input.provider import Provider
 from src.input.util import Util
 
 
@@ -40,19 +40,21 @@ class LogGabor:
 
     @staticmethod
     def interest_degrees(normalized_iris):
-        ans = np.zeros((36, 360))  # Resize al tamaño de interes donde hay menos ruido
+        degrees = (246 - 180 - 1) + (359 - 314 - 1)
+        ans = np.zeros((36, degrees))  # Resize al tamaño de interes donde hay menos ruido
         for i in range(normalized_iris.shape[0]):
             for j in range(normalized_iris.shape[1]):
-                if 180 < j < 246 or 314 < j < 359:
-                    ans[i][j] = normalized_iris[i][j]
+                if 180 < j < 246:
+                    ans[i][j - 181] = normalized_iris[i][j]
+                elif 314 < j < 359:
+                    ans[i][j - 315 + 246 - 180 - 1] = normalized_iris[i][j]
         return ans
 
     @staticmethod
-    def build_filters():
+    def build_filters(ksize=27):
         filters = []
-        ksize = 7
         print('kernels:')
-        for theta in np.arange(0, np.pi , np.pi/4):
+        for theta in np.arange(0, np.pi, np.pi / 4):
             for f in [2, 4, 8, 16, 32, 64]:
                 kern = cv2.getGaborKernel((ksize, ksize), 4.0, theta, f, 0.5, 0, ktype=cv2.CV_32F)
                 # kern /= 1.5 * kern.sum()
@@ -133,10 +135,13 @@ class LogGabor:
     @staticmethod
     def compare_templates_w_euclidean(f1, f2):
         acu = 0
+        # print('wrong indexes:')
         for i in range(len(f1)):
-            acu += ((f1[0] - f2[0]) ** 2) / (f1[1] ** 2)
+            if f1[i][1] != 0:
+                acu += ((f1[i][0] - f2[i][0]) ** 2) / (f1[i][1] ** 2)
+            # else:
+            # print(i)
         return acu
-
 
 
 # image = Util.load_image('src/input/LENA.RAW')
@@ -156,27 +161,36 @@ class LogGabor:
 # diana_normalized = LogGabor.normalization(diana, , )
 # cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/diana.jpg', diana_normalized)
 
-def compare(name1, name2):
-    filters = LogGabor.build_filters()
+def compare(name1, name2, ksize=27):
+    filters = LogGabor.build_filters(ksize)
 
-    template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/iris_' + str(name1) + '_gabor.jpg')
+    template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
     template1 = cv2.cvtColor(template1.astype('B'), cv2.COLOR_BGR2GRAY)
-    template1 = Provider.equalize_histogram(template1)
+    template1 = Provider.equalize_histogram(template1, two_dim=True)
     features1 = LogGabor.process(template1, filters)
 
-    template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/iris_' + str(name2) + '_gabor.jpg')
+    template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name2) + '.jpg')
     template2 = cv2.cvtColor(template2.astype('B'), cv2.COLOR_BGR2GRAY)
-    template2 = Provider.equalize_histogram(template2)
+    template2 = Provider.equalize_histogram(template2, two_dim=True)
     features2 = LogGabor.process(template2, filters)
 
-    print(LogGabor.compare_templates_w_euclidean(features1, features2))
-
+    result = LogGabor.compare_templates_w_euclidean(features1, features2)
+    print('Comparison:')
+    print(result)
+    return result
     # print('euclidean')
     # print(LogGabor.compare_templates_euclidean(template1, template2))
     # print('threshold')
     # print(LogGabor.compare_templates_threshold(template1, template2, 1))
 
 
-# compare(4, 5)
-# compare(4, 'philip')
-# compare(5, 'philip')
+results = []
+
+for ks in range(8, 40):
+    print(ks)
+    c1 = compare(1, 2, ks)
+    c2 = compare(1, 'philip', ks)
+    c3 = compare(2, 'philip', ks)
+    results.append([c2 * c3 / (c1 * 2), ks, c1, c2, c3])
+print(results)
+print(max(results))

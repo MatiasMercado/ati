@@ -122,7 +122,7 @@ class Provider:
         return h
 
     @staticmethod
-    def equalize_histogram(image):
+    def equalize_histogram(image, two_dim=False):
         my_h = np.histogram(image, bins=range(257), density=True)
         my_h_acu = my_h[0].copy()
         for i in range(256):
@@ -134,5 +134,5 @@ class Provider:
                 my_h_acu[i] = 255
             else:
                 my_h_acu[i] = np.round((my_h_acu[i] - min_h) * 255 / (1 - min_h))
-        ans = Util.apply_to_matrix(image, lambda p: my_h_acu[p.astype(int)])
+        ans = Util.apply_to_matrix(image, lambda p: my_h_acu[p.astype(int)], two_dim=two_dim)
         return ans

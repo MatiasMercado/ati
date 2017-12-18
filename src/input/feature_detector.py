@@ -176,17 +176,18 @@ class FeaturesDetector:
                 beta += 0.01
                 print(i)
         # print('finished')
-        filters = LogGabor.build_filters()
+        # filters = LogGabor.build_filters()
         iris = LogGabor.normalization(original, initial_state_pupil, initial_state_iris)
-        version = '2'
+        version = 'philip'
         print('iris')
         cv2.imwrite('./input/result/iris_' + str(version) + '.jpg', iris)
-        template = LogGabor.process(iris, filters)
-        print('template')
-        cv2.imwrite('./input/result/template_' + str(version) + '.jpg', template)
-        snipped_template = LogGabor.interest_degrees(template)
-        print('snipped_template')
-        cv2.imwrite('./input/result/snipped_' + str(version) + '.jpg', snipped_template)
+        snipped_iris = LogGabor.interest_degrees(iris)
+        print('snipped_iris')
+        cv2.imwrite('./input/result/snipped_' + str(version) + '.jpg', snipped_iris)
+        # template = LogGabor.process(snipped_iris, filters)
+        # print('template')
+        # cv2.imwrite('./input/result/template_' + str(version) + '.jpg', template)
+        #
 
         return initial_state_iris, initial_state_pupil
 
