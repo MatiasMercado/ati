@@ -164,12 +164,14 @@ class LogGabor:
 def compare(name1, name2, ksize=27):
     filters = LogGabor.build_filters(ksize)
 
-    template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
+    template1 = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/snipped_' + str(name1) + '.jpg')
+    # template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
     template1 = cv2.cvtColor(template1.astype('B'), cv2.COLOR_BGR2GRAY)
     template1 = Provider.equalize_histogram(template1, two_dim=True)
     features1 = LogGabor.process(template1, filters)
 
-    template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name2) + '.jpg')
+    template2 = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/snipped_' + str(name2) + '.jpg')
+    # template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name2) + '.jpg')
     template2 = cv2.cvtColor(template2.astype('B'), cv2.COLOR_BGR2GRAY)
     template2 = Provider.equalize_histogram(template2, two_dim=True)
     features2 = LogGabor.process(template2, filters)

@@ -5,6 +5,8 @@ import time
 import matplotlib
 from cv2 import cv2
 
+from input.logGabor import LogGabor
+
 matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 from src.input.util import Util
@@ -1115,7 +1117,8 @@ class ImageEditor(tk.Frame):
             radius = \
                 int(np.sqrt(VectorUtil.sqr_euclidean_distance((center_y, center_x), (event.y, event.x))))
             pupil_initial_state = Provider.get_circle_coordinates(radius, (center_y, center_x))
-            iris, pupil = FeaturesDetector.iris_detector(image, handle_iris_release.initial_state, pupil_initial_state)
+            features, iris, pupil = FeaturesDetector.iris_detector(image, handle_iris_release.initial_state, pupil_initial_state)
+            canvas.features = features
             transformed_img = self.draw_control_points(image, iris, pupil)
             self.create_new_image(transformed_img)
 
@@ -1148,6 +1151,13 @@ class ImageEditor(tk.Frame):
                 ans[x][y][1] = 0
                 ans[x][y][2] = 255
         return ans
+
+    def compare_iris(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        self.wait_variable(self.active_window)
+        image2, color2, canvas2 = self.open_images[self.active_window.get()]
+        equals = LogGabor.compare_templates_w_euclidean(canvas.features, canvas2.features)
 
     # Private Functions
     def __merge_rgb(self, r, g, b):
