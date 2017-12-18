@@ -118,7 +118,7 @@ class FeaturesDetector:
         ])
 
     @staticmethod
-    def iris_detector(image, initial_state_iris, initial_state_pupil, alpha=0.75, beta=0.75, gamma=0.9, iterations=0):
+    def iris_detector(image, initial_state_iris, initial_state_pupil, alpha=0.75, beta=0.75, gamma=0.9, iterations=20):
         iris_length = len(initial_state_iris)
         pupil_length = len(initial_state_pupil)
         original = image

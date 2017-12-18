@@ -185,13 +185,13 @@ def compare(name1, name2, ksize=27):
     # print(LogGabor.compare_templates_threshold(template1, template2, 1))
 
 
-results = []
-
-for ks in range(8, 40):
-    print(ks)
-    c1 = compare(1, 2, ks)
-    c2 = compare(1, 'philip', ks)
-    c3 = compare(2, 'philip', ks)
-    results.append([c2 * c3 / (c1 * 2), ks, c1, c2, c3])
-print(results)
-print(max(results))
+# results = []
+#
+# for ks in range(8, 40):
+#     print(ks)
+#     c1 = compare(1, 2, ks)
+#     c2 = compare(1, 'philip', ks)
+#     c3 = compare(2, 'philip', ks)
+#     results.append([c2 * c3 / (c1 * 2), ks, c1, c2, c3])
+# print(results)
+# print(max(results))

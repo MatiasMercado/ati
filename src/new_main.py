@@ -145,7 +145,8 @@ class ImageEditor(tk.Frame):
         # Features Detector Menu
         feature_detectors_menu.add_command(label='SIFT compare', command=self.SIFT_compare)
         feature_detectors_menu.add_command(label='SIFT', command=self.SIFT_single)
-        feature_detectors_menu.add_command(label='Iris Detector', command=self.iris_detector)
+        feature_detectors_menu.add_command(label='Iris Template', command=self.iris_detector)
+        feature_detectors_menu.add_command(label='Iris Compare', command=self.compare_iris)
         menu_bar.add_cascade(label='Features Detectors', menu=feature_detectors_menu)
 
         # Settings
