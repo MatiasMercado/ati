@@ -133,14 +133,14 @@ class LogGabor:
         return p1_value or p2_value, p1_value and p2_value
 
     @staticmethod
-    def compare_templates_w_euclidean(f1, f2):
+    def compare_templates_w_euclidean(f1, f2, threshold=0.7):
         acu = 0
         for i in range(len(f1)):
             if f1[i][1] != 0:
                 acu += ((f1[i][0] - f2[i][0]) ** 2) / (f1[i][1] ** 2)
         print('comparison result:')
         print(acu)
-        return acu < 0.7
+        return acu < threshold
 
 
 # image = Util.load_image('src/input/LENA.RAW')
