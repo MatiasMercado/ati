@@ -4,7 +4,6 @@ import time
 # import cv2
 import matplotlib
 from cv2 import cv2
-
 from input.logGabor import LogGabor
 
 matplotlib.use("TkAgg")
@@ -147,6 +146,7 @@ class ImageEditor(tk.Frame):
         feature_detectors_menu.add_command(label='SIFT', command=self.SIFT_single)
         feature_detectors_menu.add_command(label='Iris Template', command=self.iris_detector)
         feature_detectors_menu.add_command(label='Iris Compare', command=self.compare_iris)
+        feature_detectors_menu.add_command(label='Iris Identify', command=self.identify_iris)
         menu_bar.add_cascade(label='Features Detectors', menu=feature_detectors_menu)
 
         # Settings
@@ -1086,6 +1086,7 @@ class ImageEditor(tk.Frame):
                 canvas.unbind('<ButtonPress-1>')
                 canvas.bind("<B1-Motion>", handle_select_radius)
                 canvas.bind('<ButtonRelease-1>', handle_select_release)
+
             return select_center
 
         def handle_iris_motion(event):
@@ -1093,14 +1094,16 @@ class ImageEditor(tk.Frame):
             radius = \
                 int(np.sqrt(VectorUtil.sqr_euclidean_distance(select_circle_center.center, (event.x, event.y))))
             canvas.delete(handle_iris_motion.id)
-            handle_iris_motion.id = canvas.create_oval(center_x - radius, center_y - radius, center_x + radius, center_y + radius, outline='#eef442')
+            handle_iris_motion.id = canvas.create_oval(center_x - radius, center_y - radius, center_x + radius,
+                                                       center_y + radius, outline='#eef442')
 
         def handle_pupil_motion(event):
             center_x, center_y = select_circle_center.center
             radius = \
                 int(np.sqrt(VectorUtil.sqr_euclidean_distance(select_circle_center.center, (event.x, event.y))))
             canvas.delete(handle_pupil_motion.id)
-            handle_pupil_motion.id = canvas.create_oval(center_x - radius, center_y - radius, center_x + radius, center_y + radius, outline='#d8112f')
+            handle_pupil_motion.id = canvas.create_oval(center_x - radius, center_y - radius, center_x + radius,
+                                                        center_y + radius, outline='#d8112f')
 
         def handle_iris_release(event):
             center_x, center_y = select_circle_center.center
@@ -1118,7 +1121,19 @@ class ImageEditor(tk.Frame):
             radius = \
                 int(np.sqrt(VectorUtil.sqr_euclidean_distance((center_y, center_x), (event.y, event.x))))
             pupil_initial_state = Provider.get_circle_coordinates(radius, (center_y, center_x))
-            features, iris, pupil = FeaturesDetector.iris_detector(image, handle_iris_release.initial_state, pupil_initial_state)
+            features, iris, pupil = FeaturesDetector.iris_detector(image, handle_iris_release.initial_state,
+                                                                   pupil_initial_state)
+            image_name = self.active_window.get().split()[0]
+            filename = './input/database/' + str(image_name) + '.fte'
+            version = 1
+            while os.path.isfile(filename):
+                version += 1
+                filename = './input/database/' + str(image_name) + '-' + str(version) + '.fte'
+
+            # with open(filename, 'w+') as file:
+            #     file.write(str(features))
+            #     file.close()
+
             canvas.features = features
             transformed_img = self.draw_control_points(image, iris, pupil)
             self.create_new_image(transformed_img)
@@ -1127,8 +1142,8 @@ class ImageEditor(tk.Frame):
         handle_iris_motion.radius = 0
         handle_pupil_motion.id = 0
         handle_pupil_motion.radius = 0
-        select_circle_center.center = (0,0)
-        select_circle_center.center = (0,0)
+        select_circle_center.center = (0, 0)
+        select_circle_center.center = (0, 0)
         handle_iris_release.initial_state = []
         canvas.bind('<ButtonPress-1>', select_circle_center(handle_iris_release, handle_iris_motion))
 
@@ -1161,6 +1176,12 @@ class ImageEditor(tk.Frame):
         image2, color2, canvas2 = self.open_images[self.active_window.get()]
         image2Name = self.active_window.get().split()[0]
         equals = LogGabor.compare_templates_w_euclidean(canvas.features, canvas2.features, image1Name, image2Name)
+
+    def identify_iris(self):
+        self.wait_variable(self.active_window)
+        image, color, canvas = self.open_images[self.active_window.get()]
+        image_name = self.active_window.get().split()[0]
+        LogGabor.compare_to_database(canvas.features, image_name)
 
     # Private Functions
     def __merge_rgb(self, r, g, b):

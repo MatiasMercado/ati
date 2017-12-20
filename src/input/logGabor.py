@@ -1,4 +1,5 @@
 import math
+import os
 
 import cv2
 import numpy as np
@@ -51,7 +52,7 @@ class LogGabor:
         return ans
 
     @staticmethod
-    def build_filters(ksize=27):
+    def build_filters(ksize=9):
         filters = []
         print('kernels:')
         for theta in np.arange(0, np.pi, np.pi / 4):
@@ -133,7 +134,7 @@ class LogGabor:
         return p1_value or p2_value, p1_value and p2_value
 
     @staticmethod
-    def compare_templates_w_euclidean(f1, f2, name1='image1', name2='image2', threshold=0.7):
+    def compare_templates_w_euclidean(f1, f2, name1='image1', name2='image2', threshold=0.6):
         acu = 0
         for i in range(len(f1)):
             if f1[i][1] != 0:
@@ -141,38 +142,46 @@ class LogGabor:
         print('comparison result:')
         print(acu)
         with open("log.txt", "a") as log_file:
-            log_file.write(str(name1) + ' - ' + str(name2) + ' => ' + str(acu))
-        return acu < threshold
+            log_file.write(str(name1) + ' - ' + str(name2) + ' => ' + str(acu) + '\n')
+        return acu
 
+    @staticmethod
+    def compare_to_database(features, name='new'):
 
-# image = Util.load_image('src/input/LENA.RAW')
-# image = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/iris.jpg')
-# image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-# filters = LogGabor.build_filters()
-#
-# image = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/iris.jpg')
+        min_dist = 0, 10000
 
-# image = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/iris_philip.jpg')
-# image = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-# filters = LogGabor.build_filters()
-# template = LogGabor.process(image, filters)
-# cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/iris_philip_gabor.jpg', template)
+        def filename(file_input):
+            return str(file_input).split('\'')[1]
 
-# diana = Provider.draw_diana()
-# diana_normalized = LogGabor.normalization(diana, , )
-# cv2.imwrite('/home/mati/Documents/pythonenv/ati/src/input/diana.jpg', diana_normalized)
+        if os.path.isdir("./database"):
+            path = "./database"
+        else:
+            path = "./input/database"
+        directory = os.fsencode(path)
+
+        for fd in os.listdir(directory):
+            print('entry')
+            with open(path + '/' + filename(fd), 'r') as file:
+                for line in file:
+                    current = eval(line)
+            dist = LogGabor.compare_templates_w_euclidean(features, current, name, filename(file))
+            print(dist)
+            print(filename(file))
+            if dist < min_dist[1]:
+                min_dist = filename(file), dist
+        print(min_dist)
+        return min_dist
+
 
 def compare(name1, name2, ksize=27):
     filters = LogGabor.build_filters(ksize)
 
-    template1 = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/snipped_' + str(name1) + '.jpg')
-    # template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
+    template1 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name1) + '.jpg')
     template1 = cv2.cvtColor(template1.astype('B'), cv2.COLOR_BGR2GRAY)
     template1 = Provider.equalize_histogram(template1, two_dim=True)
     features1 = LogGabor.process(template1, filters)
 
-    template2 = Util.load_image('/home/mati/Documents/pythonenv/ati/src/input/result/snipped_' + str(name2) + '.jpg')
-    # template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name2) + '.jpg')
+    template2 = Util.load_image('/Users/jcl/PycharmProjects/ati/ati/src/input/result/snipped_' + str(name2) + '.jpg')
     template2 = cv2.cvtColor(template2.astype('B'), cv2.COLOR_BGR2GRAY)
     template2 = Provider.equalize_histogram(template2, two_dim=True)
     features2 = LogGabor.process(template2, filters)

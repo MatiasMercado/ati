@@ -3,6 +3,7 @@ from cv2 import cv2
 
 from src.input.filter_provider import FilterProvider
 from src.input.logGabor import LogGabor
+from src.input.provider import Provider
 from src.input.vector_util import VectorUtil
 
 
@@ -118,7 +119,7 @@ class FeaturesDetector:
         ])
 
     @staticmethod
-    def iris_detector(image, initial_state_iris, initial_state_pupil, alpha=0.75, beta=0.75, gamma=0.9, iterations=20):
+    def iris_detector(image, initial_state_iris, initial_state_pupil, alpha=0.75, beta=0.75, gamma=0.9, iterations=1):
         iris_length = len(initial_state_iris)
         pupil_length = len(initial_state_pupil)
         original = image
@@ -158,6 +159,7 @@ class FeaturesDetector:
                 beta += 0.01
                 print(i)
         filters = LogGabor.build_filters(9)
+
         iris = LogGabor.normalization(original, initial_state_pupil, initial_state_iris)
         version = 'philip'
         print('iris')
@@ -165,7 +167,8 @@ class FeaturesDetector:
         snipped_iris = LogGabor.interest_degrees(iris)
         print('snipped_iris')
         cv2.imwrite('./input/result/snipped_' + str(version) + '.jpg', snipped_iris)
-        features = LogGabor.process(snipped_iris, filters)
+        equalized_snipped_iris = Provider.equalize_histogram(snipped_iris, two_dim=True)
+        features = LogGabor.process(equalized_snipped_iris, filters)
 
         return features, initial_state_iris, initial_state_pupil
 
@@ -232,83 +235,22 @@ class FeaturesDetector:
 
         return continuity_energy, curvature_energy, image_energy
 
-# def process_input(params):
-#     image_editor = ImageEditor()
-#     image = Util.load_image('./myCircles/ojo-anisotropic-60-0-3.jpg')
-#
-#     gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-#
-#     alpha_param, beta_param, gamma_param = params
-#     initial_state = Provider.get_circle_coordinates(70, (124, 175))
-#     control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=1,
-#                                                     alpha=alpha_param, beta=beta_param, gamma=gamma_param)
-#     transformed_image = image_editor.draw_control_points(gray, control_points)
-#     cv2.imwrite('./myCircles/result-' + str(alpha_param) + '-' + str(beta_param) + '-' + str(gamma_param) + '.jpg',
-#                 transformed_image)
-#
-#
-# num_cores = multiprocessing.cpu_count()
-#
-# inputs = []
-# for a in np.arange(0.3, 0.9, 0.2):
-#     for b in np.arange(0.7, 1.1, 0.05):
-#         for g in np.arange(0.7, 1.1, 0.1):
-#             inputs.append((a, b, g))
-#
-#
-# class myThread(threading.Thread):
-#     def __init__(self, params):
-#         super().__init__()
-#         self.params = params
-#
-#     def run(self):
-#         print("Starting " + str(self.params))
-#         image = Util.load_image('./myCircles/ojo-anisotropic-60-0-3.jpg')
-#
-#         gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
-#
-#         alpha_param, beta_param, gamma_param = self.params
-#         initial_state = Provider.get_circle_coordinates(70, (124, 175))
-#         control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=80,
-#                                                         alpha=alpha_param, beta=beta_param, gamma=gamma_param)
-#         transformed_image = image_editor.draw_control_points(gray, control_points)
-#         cv2.imwrite('./myCircles/result-' + str(alpha_param) + '-' + str(beta_param) + '-' + str(gamma_param) + '.jpg',
-#                     transformed_image)
-#         print("Exiting " + str(self.params))
-#
-#
-# # threads = []
+# print('Finished')
 # image_editor = ImageEditor()
-#
-# # for input_param in inputs:
-# #     t = myThread(input_param)
-# #     t.start()
-# #     threads.append(t)
-# #
-# # count = 0
-# # for t in threads:
-# #     count += 1
-# #     t.join()
-# #     print(str(count))
-#
-# # print('Finished')
-# # image_editor = ImageEditor()
-# # image = Util.load_image('ojo.bmp')
+# image = Util.load_image('ojo.bmp')
 # image = Util.load_image('./myCircles/ojo-anisotropic-60-0-3.jpg')
-# # # image = Provider.draw_circle()
-# # image = FilterProvider.median_filter(image, independent_layer=True)
-# # image = FilterProvider.anisotropic_filter(image, 60, 0, 3, independent_layer=True)
-# # cv2.imwrite('./myCircles/ojo-anisotropic-60-0-3.jpg', image)
+# image = Provider.draw_circle()
+# image = FilterProvider.median_filter(image, independent_layer=True)
+# image = FilterProvider.anisotropic_filter(image, 60, 0, 3, independent_layer=True)
+# cv2.imwrite('./myCircles/ojo-anisotropic-60-0-3.jpg', image)
 # gray = cv2.cvtColor(image.astype('B'), cv2.COLOR_BGR2GRAY)
 #
-# # results = Parallel(n_jobs=num_cores)(delayed(process_input)(i) for i in inputs)
-# #
-# # initial_state = Provider.get_circle_coordinates(63, (124, 174))
+# initial_state = Provider.get_circle_coordinates(63, (124, 174))
 # initial_state = Provider.get_circle_coordinates(70, (124, 175))
-# # # print(initial_state)
+# print(initial_state)
 # control_points = FeaturesDetector.iris_detector(gray, initial_state, iterations=140, alpha=0.7, beta=0.75, gamma=0.9)
-# # control_points = initial_state
+# control_points = initial_state
 # transformed_image = image_editor.draw_control_points(gray, control_points)
-# # image_editor.create_new_image(transformed_image)
-# # print(control_points)
+# image_editor.create_new_image(transformed_image)
+# print(control_points)
 # cv2.imwrite('./myCircles/myCircle-0.7-0.75-0.9.jpg', transformed_image)
