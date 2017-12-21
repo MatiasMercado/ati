@@ -206,3 +206,9 @@ def compare(name1, name2, ksize=27):
 #     results.append([c2 * c3 / (c1 * 2), ks, c1, c2, c3])
 # print(results)
 # print(max(results))
+
+# diana = Provider.draw_diana()
+# inner = Provider.get_circle_coordinates(40, (128, 128))
+# outter = Provider.get_circle_coordinates(80, (128, 128))
+# normalized_diana = LogGabor.normalization(diana, inner, outter)
+# cv2.imwrite('./diana.jpg', normalized_diana)

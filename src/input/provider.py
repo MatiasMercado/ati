@@ -99,6 +99,10 @@ class Provider:
             new_y = y_c - int(np.sqrt(radius * radius - x * x))
             if (new_x, new_y) not in ret:
                 ret.append((new_x, new_y))
+
+        if (x_c + radius, y_c) not in ret:
+            ret.append((x_c + radius, y_c))
+
         return ret
 
     @staticmethod
