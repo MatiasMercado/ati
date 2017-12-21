@@ -152,6 +152,9 @@ class ImageEditor(tk.Frame):
         # Settings
         menu_bar.add_command(label='Settings', command=self.show_settings)
 
+        # Settings
+        menu_bar.add_command(label='More', command=self.show_settings)
+
         # Add menu Bar to Root Window
         root.config(menu=menu_bar)
 
@@ -247,6 +250,13 @@ class ImageEditor(tk.Frame):
         # Canny
         self.harris_threshold = tk.DoubleVar()
         self.harris_threshold.set(0.008)
+
+        # Greedy Snake
+        self.snake_iterations = tk.IntVar()
+        self.snake_iterations.set(50)
+
+        # self.save_template = tk.BooleanVar()
+        # self.save_template.set(False)
 
     def create_settings_window(self):
         settings_frame = tk.Frame(self)
@@ -406,8 +416,10 @@ class ImageEditor(tk.Frame):
 
         # Harris
         tk.Label(settings_frame, text='Harris Threshold').grid(row=next_row(), column=2)
-        tk.Entry(settings_frame, text=self.harris_threshold, textvariable=self.harris_threshold).grid(row=curr_row(),
-                                                                                                      column=3)
+        tk.Entry(settings_frame, text=self.harris_threshold, textvariable=self.harris_threshold).grid(row=curr_row(), column=3)
+
+        tk.Label(settings_frame, text='Snake Iterations').grid(row=next_row(), column=2)
+        tk.Entry(settings_frame, text=self.snake_iterations, textvariable=self.snake_iterations).grid(row=curr_row(), column=3)
 
         return settings_frame
 
@@ -1122,7 +1134,7 @@ class ImageEditor(tk.Frame):
                 int(np.sqrt(VectorUtil.sqr_euclidean_distance((center_y, center_x), (event.y, event.x))))
             pupil_initial_state = Provider.get_circle_coordinates(radius, (center_y, center_x))
             features, iris, pupil = FeaturesDetector.iris_detector(image, handle_iris_release.initial_state,
-                                                                   pupil_initial_state)
+                                                                   pupil_initial_state, iterations=self.snake_iterations.get())
             image_name = self.active_window.get().split()[0]
             filename = './input/database/' + str(image_name) + '.fte'
             version = 1
